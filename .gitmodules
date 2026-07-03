@@ -22,9 +22,13 @@
 [submodule "udm"]
 	path = NFs/udm
 	url = https://github.com/free5gc/udm.git
-[submodule "udr"]
-	path = NFs/udr
-	url = https://github.com/free5gc/udr.git
+; [submodule "udr"]
+; 	path = NFs/udr
+; 	url = https://github.com/free5gc/udr.git
+[submodule "NFs/udr"]
+    path = NFs/udr
+    url = git@github-free5gc:Neko-Bytes/free5gc-ta.git
+    branch = submodule-udr
 [submodule "upf"]
 	path = NFs/upf
 	url = https://github.com/free5gc/go-upf.git
