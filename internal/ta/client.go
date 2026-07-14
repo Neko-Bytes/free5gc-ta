@@ -157,7 +157,7 @@ func TaGetCategory(collName string) byte {
 // When data goes to MongoDB, it is sent in simple understandable JSON file. However for RocksDB, we need to extract the data from the JSON file
 // such that: Key = "[Owner_Id] + [category] + [Key]", Value = [valBytes]
 // Hence the info required for Key needs to be extracted from JSON file and concatenated into a single byte/string.
-func TaExtractfromFilter(filter bson.M) string {
+func TaExtractKeyfromFilter(filter bson.M) string {
 	if filter == nil {
 		return ""
 	}
