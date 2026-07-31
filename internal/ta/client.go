@@ -5,10 +5,10 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
+	"github.com/free5gc/udr/internal/logger"
 	pb "github.com/free5gc/udr/internal/ta-pb"
 	"go.mongodb.org/mongo-driver/bson"
 	"google.golang.org/grpc"
@@ -42,7 +42,7 @@ func TaInit(address string) error {
 	var lastErr error
 	// To avoid duplicate connection
 	if taClient != nil {
-		log.Println("A TaClient connection already exists!")
+		logger.Initlog.Warnln("A TaClient connection already exists!")
 		return nil
 	}
 
@@ -75,7 +75,7 @@ func TaInit(address string) error {
 		binary.BigEndian.PutUint64(ownerBytes, ownerID)
 		ctx = metadata.AppendToOutgoingContext(context.Background(), "id-bin", string(ownerBytes))
 
-		log.Printf("[TA Client] [Owner ID: %d] Connected to TA successfully. Attempts: %d", ownerID, i)
+		log.Initlog.Infof("[TA Client] [Owner ID: %d] Connected to TA successfully. Attempts: %d", ownerID, i)
 		return nil
 	}
 
@@ -112,7 +112,7 @@ func TaWrite(collName string, key string, value interface{}) error {
 	// Get the category in bytes to know where to store the value
 	category := TaGetCategory(collName)
 
-	// Serialise value structure/map to JSON bytes
+	// Serialise value inside JSON structure/map into single line of bytes of char*
 	valBytes, err := json.Marshal(value)
 	if err != nil {
 		return fmt.Errorf("Failed to serialize value to JSON: %w", err)
@@ -157,7 +157,7 @@ func TaGetCategory(collName string) byte {
 // When data goes to MongoDB, it is sent in simple understandable JSON file. However for RocksDB, we need to extract the data from the JSON file
 // such that: Key = "[Owner_Id] + [category] + [Key]", Value = [valBytes]
 // Hence the info required for Key needs to be extracted from JSON file and concatenated into a single byte/string.
-func TaExtractKeyfromFilter(filter bson.M) string {
+func TaExtractfromFilter(filter bson.M) string {
 	if filter == nil {
 		return ""
 	}
@@ -170,6 +170,12 @@ func TaExtractKeyfromFilter(filter bson.M) string {
 		if pduSessionId, ok := filter["pduSessionId"]; ok {
 			return fmt.Sprintf("%s_%v", ueId, pduSessionId)
 		}
+		if limitId, ok := filter["limitId"].(string); ok {
+			return fmt.Sprintf("%s_%s", ueId, limitId)
+		}
+		if usageMonId, ok := filter["usageMonId"].(string); ok {
+			return fmt.Sprintf("%s_%s", ueId, usageMonId)
+		}
 		return ueId
 	}
 
@@ -181,6 +187,9 @@ func TaExtractKeyfromFilter(filter bson.M) string {
 	}
 	if applicationId, ok := filter["applicationId"].(string); ok {
 		return applicationId
+	}
+	if bdtReferenceId, ok := filter["bdtReferenceId"].(string); ok {
+		return bdtReferenceId
 	}
 
 	return fmt.Sprintf("%v", filter)
