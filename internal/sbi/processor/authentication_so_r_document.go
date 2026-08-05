@@ -26,6 +26,8 @@ func (p *Processor) CreateAuthenticationSoRProcedure(c *gin.Context, collName st
 
 	if _, err := mongoapi.RestfulAPIPutOne(collName, filter, putData); err != nil {
 		logger.DataRepoLog.Errorf("CreateAuthenticationSoRProcedure err: %+v", err)
+	} else {
+		p.TaWriteMirror(collName, filter, putData)
 	}
 
 	c.Status(http.StatusNoContent)

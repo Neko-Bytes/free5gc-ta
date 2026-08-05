@@ -49,6 +49,8 @@ func (p *Processor) CreateAmfContext3gppProcedure(c *gin.Context, collName strin
 
 	if _, err := mongoapi.RestfulAPIPutOne(collName, filter, putData); err != nil {
 		logger.DataRepoLog.Errorf("CreateAmfContext3gppProcedure err: %+v", err)
+	} else {
+		p.TaWriteMirror(collName, filter, putData)
 	}
 	c.Status(http.StatusNoContent)
 }

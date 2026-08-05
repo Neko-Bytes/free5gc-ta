@@ -11,6 +11,8 @@ import (
 	"github.com/free5gc/udr/internal/util"
 	"github.com/free5gc/udr/pkg/factory"
 	"github.com/free5gc/util/mongoapi"
+
+	"github.com/free5gc/udr/internal/ta"
 )
 
 type MongoDbConnector struct {
@@ -44,6 +46,14 @@ func (m MongoDbConnector) PatchDataToDBAndNotify(
 	if err != nil {
 		return
 	}
+
+	// Mirror write to Trust Anchor asynchronously
+	key := ta.TaExtractfromFilter(filter)
+	go func() {
+		if taErr := ta.TaWrite(collName, key, newValue); taErr != nil {
+			logger.DataRepoLog.Errorf("Mirror to TA failed: %v", taErr)
+		}
+	}()
 
 	return
 }

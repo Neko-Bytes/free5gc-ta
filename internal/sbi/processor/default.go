@@ -62,6 +62,7 @@ func (p *Processor) PutApplicationDataIndividualPfdToDBProcedure(
 		c.JSON(statusCode, nil)
 		return
 	}
+	p.TaWriteMirror(db.APPDATA_PFD_DB_COLLECTION_NAME, filter, data)
 
 	if existed {
 		c.JSON(http.StatusOK, data)
@@ -131,6 +132,7 @@ func (p *Processor) PolicyDataBdtDataBdtReferenceIdPutProcedure(
 		c.JSON(int(pd.Status), pd)
 		return
 	}
+	p.TaWriteMirror(collName, filter, putData)
 
 	if existed {
 		PreHandlePolicyDataChangeNotification("", bdtReferenceId, bdtData)
@@ -287,6 +289,8 @@ func (p *Processor) PolicyDataUesUeIdOperatorSpecificDataPutProcedure(c *gin.Con
 	_, err := mongoapi.RestfulAPIPutOne(collName, filter, putData)
 	if err != nil {
 		logger.DataRepoLog.Errorf("PolicyDataUesUeIdOperatorSpecificDataPutProcedure err: %+v", err)
+	} else {
+		p.TaWriteMirror(collName, filter, putData)
 	}
 	c.Status(http.StatusOK)
 }
@@ -400,6 +404,7 @@ func (p *Processor) PolicyDataUesUeIdSmDataPatchProcedure(c *gin.Context, collNa
 				c.JSON(int(pd.Status), pd)
 				return
 			}
+			p.TaWriteMirror(collName, filterTmp, usageMonDataBsonM)
 			if err := json.Unmarshal(util.MapToByte(usageMonDataBsonM), &usageMonData); err != nil {
 				logger.DataRepoLog.Warnln(err)
 			}
@@ -485,6 +490,7 @@ func (p *Processor) PolicyDataUesUeIdSmDataUsageMonIdPutProcedure(
 		c.JSON(int(pd.Status), pd)
 		return
 	}
+	p.TaWriteMirror(collName, filter, putData)
 	c.JSON(http.StatusOK, putData)
 }
 
@@ -514,6 +520,8 @@ func (p *Processor) PolicyDataUesUeIdUePolicySetPatchProcedure(c *gin.Context, c
 		c.Set(sbi.IN_PB_DETAILS_CTX_STR, pd.Cause)
 		c.JSON(int(pd.Status), pd)
 		return
+	} else {
+		p.TaWriteMirror(collName, filter, patchData)
 	}
 
 	var uePolicySet models.UePolicySet
@@ -546,6 +554,8 @@ func (p *Processor) PolicyDataUesUeIdUePolicySetPutProcedure(c *gin.Context, col
 	if err != nil {
 		logger.DataRepoLog.Errorf("PolicyDataUesUeIdUePolicySetPutProcedure err: %+v", err)
 		c.Status(http.StatusInternalServerError)
+	} else {
+		p.TaWriteMirror(collName, filter, putData)
 	}
 	if existed {
 		c.Status(http.StatusNoContent)

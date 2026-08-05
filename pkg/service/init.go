@@ -23,6 +23,8 @@ import (
 	"github.com/free5gc/util/metrics"
 	"github.com/free5gc/util/metrics/utils"
 	"github.com/free5gc/util/mongoapi"
+
+	"github.com/free5gc/udr/internal/ta"
 )
 
 type UdrApp struct {
@@ -204,6 +206,11 @@ func (a *UdrApp) Start() {
 		return
 	}
 
+	// Connect to Trust Anchor
+	if err := ta.TaInit("localhost:9000"); err != nil {
+		logger.InitLog.Errorf("Trust Anchor initialisation failed: %v", err)
+	}
+
 	// Graceful deregister when panic
 	defer func() {
 		if p := recover(); p != nil {
@@ -240,6 +247,11 @@ func (a *UdrApp) terminateProcedure() {
 	logger.MainLog.Infof("Terminating UDR...")
 	a.CallServerStop()
 	a.deregisterFromNrf()
+
+	// Close Trust Anchor connection
+	if err := ta.TaClose(); err != nil {
+		logger.MainLog.Errorf("Failed to close Trust Anchor client: %v", err)
+	}
 }
 
 func (a *UdrApp) CallServerStop() {

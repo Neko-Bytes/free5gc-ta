@@ -32,6 +32,8 @@ func (p *Processor) CreateSmsfContextNon3gppProcedure(
 	_, err := mongoapi.RestfulAPIPutOne(collName, filter, putData)
 	if err != nil {
 		logger.DataRepoLog.Errorf("CreateSmsfContextNon3gppProcedure err: %+v", err)
+	} else {
+		p.TaWriteMirror(collName, filter, putData)
 	}
 
 	c.Status(http.StatusNoContent)

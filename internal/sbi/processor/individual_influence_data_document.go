@@ -83,6 +83,7 @@ func (p *Processor) ApplicationDataInfluenceDataInfluenceIdPutProcedure(
 		c.JSON(int(problemDetails.Status), problemDetails)
 		return
 	}
+	p.TaWriteMirror(collName, filter, putData)
 	if original == nil || !reflect.DeepEqual(*original, *request) {
 		// Notify the change of influence data
 		PreHandleInfluenceDataUpdateNotification(influenceId, original, request)

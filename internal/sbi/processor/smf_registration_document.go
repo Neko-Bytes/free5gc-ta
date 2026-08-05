@@ -39,6 +39,7 @@ func (p *Processor) CreateSmfContextNon3gppProcedure(c *gin.Context, SmfRegistra
 		c.JSON(http.StatusInternalServerError, problemDetails)
 		return
 	}
+	p.TaWriteMirror(collName, filter, putData)
 
 	if existed {
 		c.JSON(http.StatusOK, putData)
