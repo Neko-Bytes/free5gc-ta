@@ -42,7 +42,7 @@ func TaInit(address string) error {
 	var lastErr error
 	// To avoid duplicate connection
 	if taClient != nil {
-		logger.Initlog.Warnln("A TaClient connection already exists!")
+		logger.InitLog.Warnln("A TaClient connection already exists!")
 		return nil
 	}
 
@@ -75,7 +75,7 @@ func TaInit(address string) error {
 		binary.BigEndian.PutUint64(ownerBytes, ownerID)
 		ctx = metadata.AppendToOutgoingContext(context.Background(), "id-bin", string(ownerBytes))
 
-		log.Initlog.Infof("[TA Client] [Owner ID: %d] Connected to TA successfully. Attempts: %d", ownerID, i)
+		logger.InitLog.Infof("[TA Client] [Owner ID: %d] Connected to TA successfully. Attempts: %d", ownerID, i)
 		return nil
 	}
 
