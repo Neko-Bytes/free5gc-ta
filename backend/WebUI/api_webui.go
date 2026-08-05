@@ -25,6 +25,8 @@ import (
 	"github.com/free5gc/util/mongoapi"
 	"github.com/free5gc/webconsole/backend/logger"
 	"github.com/free5gc/webconsole/backend/webui_context"
+
+	"github.com/free5gc/webconsole/backend/ta"
 )
 
 const (
@@ -1507,6 +1509,13 @@ func dbOperation(
 		}
 		if _, err := mongoapi.RestfulAPIPutOne(authSubsDataColl, filterUeIdOnly, authSubsBsonM); err != nil {
 			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
+		} else {
+			key := ta.TaExtractfromFilter(filterUeIdOnly)
+			go func() {
+				if taErr := ta.TaWrite(authSubsDataColl, key, authSubsBsonM); taErr != nil {
+					logger.ProcLog.Errorf("Mirror to TA failed: %v", taErr)
+				}
+			}()
 		}
 		if _, err := mongoapi.RestfulAPIPutOne(amDataColl, filter, amDataBsonM); err != nil {
 			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
