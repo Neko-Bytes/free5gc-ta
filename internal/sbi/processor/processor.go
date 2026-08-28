@@ -24,7 +24,7 @@ func NewProcessor(udr app.App) *Processor {
 func (p *Processor) TaWriteMirror(collName string, filter bson.M, value interface{}) {
 	key := ta.TaExtractfromFilter(filter)
 	go func() {
-		if taErr := ta.TaWrite(collName, key, value); taErr != nil {
+		if taErr := ta.TaWriteByCollName(collName, key, value); taErr != nil {
 			logger.DataRepoLog.Errorf("Mirror to TA failed: %v", taErr)
 		}
 	}()

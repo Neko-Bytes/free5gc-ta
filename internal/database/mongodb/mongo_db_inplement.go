@@ -50,7 +50,7 @@ func (m MongoDbConnector) PatchDataToDBAndNotify(
 	// Mirror write to Trust Anchor asynchronously
 	key := ta.TaExtractfromFilter(filter)
 	go func() {
-		if taErr := ta.TaWrite(collName, key, newValue); taErr != nil {
+		if taErr := ta.TaWriteByCollName(collName, key, newValue); taErr != nil {
 			logger.DataRepoLog.Errorf("Mirror to TA failed: %v", taErr)
 		}
 	}()

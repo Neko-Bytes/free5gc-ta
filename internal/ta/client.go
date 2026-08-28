@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -16,13 +17,21 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-var (
-	conn     *grpc.ClientConn
-	taClient pb.TrustAnchorClient
-	ownerID  uint64
-	mu       sync.Mutex
-	ctx      context.Context
-)
+type TaClient struct {
+	conn    *grpc.ClientConn
+	client  pb.TrustAnchorClient
+	ownerID uint64
+	mu      sync.Mutex
+	ctx     context.Context
+
+	// Memory cache
+	ueOwnerCache   map[string]uint64
+	ueOwnerCacheMu sync.RWMutex // Using RWMutex to allow multiple reads.
+}
+
+var ta = &TaClient{
+	ueOwnerCache: make(map[string]uint64),
+}
 
 const (
 	CategoryDefault          byte = 0x00
@@ -36,12 +45,12 @@ var max_retries = 5
 var retry_delay = 2 * time.Second
 
 func TaInit(address string) error {
-	mu.Lock()
-	defer mu.Unlock()
+	ta.mu.Lock()
+	defer ta.mu.Unlock()
 
 	var lastErr error
 	// To avoid duplicate connection
-	if taClient != nil {
+	if ta.client != nil {
 		logger.InitLog.Warnln("A TaClient connection already exists!")
 		return nil
 	}
@@ -55,27 +64,27 @@ func TaInit(address string) error {
 			continue
 		}
 
-		conn = c
+		ta.conn = c
 		// Create a new client in ta
-		taClient = pb.NewTrustAnchorClient(conn)
+		ta.client = pb.NewTrustAnchorClient(ta.conn)
 
 		// Add the client as owner to ta db
-		res, err := taClient.AddOwner(context.Background(), &pb.AddOwner{})
+		res, err := ta.client.AddOwner(context.Background(), &pb.AddOwner{})
 		if err != nil {
-			conn.Close()
+			ta.conn.Close()
 			lastErr = fmt.Errorf("Failed to register owner: %w. Restarting the connection ...", err)
 			time.Sleep(retry_delay)
 			continue
 		}
 
-		ownerID = res.OwnerId
+		ta.ownerID = res.OwnerId
 
 		// Package ownerID as metadata
 		ownerBytes := make([]byte, 8)
-		binary.BigEndian.PutUint64(ownerBytes, ownerID)
-		ctx = metadata.AppendToOutgoingContext(context.Background(), "id-bin", string(ownerBytes))
+		binary.BigEndian.PutUint64(ownerBytes, ta.ownerID)
+		ta.ctx = metadata.AppendToOutgoingContext(context.Background(), "id-bin", string(ownerBytes))
 
-		logger.InitLog.Infof("[TA Client] [Owner ID: %d] Connected to TA successfully. Attempts: %d", ownerID, i)
+		logger.InitLog.Infof("[TA Client] [Owner ID: %d] Connected to TA successfully. Attempts: %d", ta.ownerID, i)
 		return nil
 	}
 
@@ -84,38 +93,35 @@ func TaInit(address string) error {
 
 // Close GRPC connection and empty the variables
 func TaClose() error {
-	mu.Lock()
-	defer mu.Unlock()
+	ta.mu.Lock()
+	defer ta.mu.Unlock()
 
-	if conn != nil {
-		err := conn.Close()
+	if ta.conn != nil {
+		err := ta.conn.Close()
 
-		conn = nil
-		taClient = nil
+		ta.conn = nil
+		ta.client = nil
 		return err
 	}
 	return nil
 }
 
-// Mirror writing operation to TA
-func TaWrite(collName string, key string, value interface{}) error {
+// TaWrite writes a JSON-serializable value to a specific owner, category, and key in Trust Anchor
+func TaWrite(ownerID uint64, category byte, key string, value interface{}) error {
 	// Apparently GRPC calls are thread-safe operations. However our taClient variable isn't. To avoid data-races, add mutex lock, copy the global
 	// taclient pointer to a local variable so that we can read the address of the ptr safely without bothering the main pointer.
-	mu.Lock()
-	client := taClient
-	mu.Unlock()
+	ta.mu.Lock()
+	client := ta.client
+	ta.mu.Unlock()
 
 	if client == nil {
-		return fmt.Errorf("Trust anchor client is not initialized")
+		return fmt.Errorf("[TaWrite]: Trust anchor client is not initialized")
 	}
-
-	// Get the category in bytes to know where to store the value
-	category := TaGetCategory(collName)
 
 	// Serialise value inside JSON structure/map into single line of bytes of char*
 	valBytes, err := json.Marshal(value)
 	if err != nil {
-		return fmt.Errorf("Failed to serialize value to JSON: %w", err)
+		return fmt.Errorf("[TaWrite]: Failed to serialize value to JSON: %w", err)
 	}
 
 	// Create a request struct to write the data
@@ -129,12 +135,43 @@ func TaWrite(collName string, key string, value interface{}) error {
 	}
 
 	// GRPC calls are thread-safe by nature. So no need to use mutex to lock the pointer
-	_, err = client.Write(ctx, req)
+	_, err = client.Write(ta.ctx, req)
 	if err != nil {
-		return fmt.Errorf("gRPC write to Trust Anchor failed: %w", err)
+		return fmt.Errorf("[TaWrite]: gRPC write to Trust Anchor failed: %w", err)
 	}
 
 	return nil
+}
+
+// TaWriteByCollName is a convenience helper for legacy callers in free5GC that write by collection name using system owner(UDR)
+func TaWriteByCollName(collName string, key string, value interface{}) error {
+	category := TaGetCategory(collName)
+	return TaWrite(ta.ownerID, category, key, value)
+}
+
+func TaRead(ownerID uint64, category byte, keyString string) ([]byte, error) {
+	ta.mu.Lock()
+	taclient := ta.client
+	ta.mu.Unlock()
+
+	if taclient == nil {
+		return nil, fmt.Errorf("[TaRead]: taClient not initialised")
+	}
+
+	req := &pb.Read{
+		Location: &pb.Location{
+			OwnerId:  ownerID,
+			Category: []byte{category},
+			Key:      []byte(keyString),
+		},
+		IncludeProof: false,
+	}
+
+	res, err := taclient.Read(ta.ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("[TaRead]: gRPC read from TA failed: %w", err)
+	}
+	return res.Value, nil
 }
 
 // Gets the category that mongoDB uses to know in which category is being used
@@ -193,4 +230,88 @@ func TaExtractfromFilter(filter bson.M) string {
 	}
 
 	return fmt.Sprintf("%v", filter)
+}
+
+// Unlike TaRead(), this one returns the whole kvpair of a category from the owner space
+func TaGetCategoryEntries(ownerID uint64, category byte) (map[string][]byte, error) {
+	ta.mu.Lock()
+	taclient := ta.client
+	ta.mu.Unlock()
+
+	if taclient == nil {
+		return nil, fmt.Errorf("[TaCat]: taclient not initialized")
+	}
+
+	req := &pb.GetCategory{
+		OwnerId:  ownerID,
+		Category: []byte{category},
+	}
+
+	res, err := taclient.GetCategory(ta.ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("[TaCat]: gRPC GetCategory failed: %w", err)
+	}
+
+	kvdata := make(map[string][]byte, len(res.Entries))
+	for _, entry := range res.Entries {
+		kvdata[string(entry.Key)] = entry.Value
+	}
+
+	return kvdata, nil
+}
+
+// The free5gc already assigns a IEMI subscriber ID for the user. This function helps to locate or create the
+// respective OwnerId for the user and also help to map both the subscriberID and OwnerID using a hashmap table
+func TaGetorCreateOwnerID(ueId string) (uint64, error) {
+	if strings.TrimSpace(ueId) == "" {
+		return 0, fmt.Errorf("[TaGCO]: an empty ueID provided") // Owner 1 is reserved for system / Non-UE data
+	}
+
+	// Check in memory cache. If ownerID already exists, return the ID
+	ta.ueOwnerCacheMu.RLock()
+	if id, exists := ta.ueOwnerCache[ueId]; exists {
+		ta.ueOwnerCacheMu.RUnlock()
+		return id, nil
+	}
+	ta.ueOwnerCacheMu.RUnlock()
+
+	// Check in TA DB. If ownerID already exists, return the ID
+	// Check the link table (Owner 1, CategoryDefault, Key: "ue-map/" + ueId)
+	mapData, err := TaRead(1, CategoryDefault, "ue-map/"+ueId)
+	if err == nil && len(mapData) > 0 {
+		var storedID uint64
+		if err := json.Unmarshal(mapData, &storedID); err == nil && storedID > 0 {
+			ta.ueOwnerCacheMu.Lock()
+			ta.ueOwnerCache[ueId] = storedID
+			ta.ueOwnerCacheMu.Unlock()
+			return storedID, nil
+		}
+	}
+
+	// Register new Owner in Trust Anchor
+	ta.mu.Lock()
+	client := ta.client
+	ta.mu.Unlock()
+
+	if client == nil {
+		return 0, fmt.Errorf("[TaGCO]: Trust anchor client is not initialized")
+	}
+
+	res, err := client.AddOwner(ta.ctx, &pb.AddOwner{})
+	if err != nil {
+		return 0, fmt.Errorf("[TaGCO]: Failed to create new owner in TA for %s: %w", ueId, err)
+	}
+	newOwnerID := res.OwnerId
+
+	// Save the link in Trust Anchor under Owner 1
+	if err := TaWrite(1, CategoryDefault, "ue-map/"+ueId, newOwnerID); err != nil {
+		logger.UtilLog.Warnf("[TaGCO]: Failed to persist ue-map in TA for %s: %v", ueId, err)
+	}
+	// Update RAM cache
+	ta.ueOwnerCacheMu.Lock()
+	ta.ueOwnerCache[ueId] = newOwnerID
+	ta.ueOwnerCacheMu.Unlock()
+
+	logger.UtilLog.Infof("[TaGCO] Linked UE %s <---> Owner ID: %d", ueId, newOwnerID)
+	return newOwnerID, nil
 }
