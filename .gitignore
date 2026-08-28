@@ -41,3 +41,6 @@ cert/*.pem
 
 # ./test.sh All
 testing_output/
+
+# personal
+graphify-out/

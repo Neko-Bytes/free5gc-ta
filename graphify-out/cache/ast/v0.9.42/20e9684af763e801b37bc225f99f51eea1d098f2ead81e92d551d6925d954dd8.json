@@ -1,1 +1,0 @@
-{"nodes": [{"id": "$graphify-root$_nfs_amf_internal_ngap_ngap_generate_go", "label": "ngap_generate.go", "file_type": "code", "source_file": "NFs/amf/internal/ngap/ngap_generate.go", "source_location": "L1"}], "edges": [], "raw_calls": [], "go_imports": {}}
