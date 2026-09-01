@@ -11,7 +11,6 @@ import (
 
 	"github.com/free5gc/udr/internal/logger"
 	pb "github.com/free5gc/udr/internal/ta-pb"
-	"go.mongodb.org/mongo-driver/bson"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
@@ -190,47 +189,47 @@ func TaGetCategory(collName string) byte {
 	}
 }
 
-// Free5GC uses MongoDB which utilises "hierarchy-based storage" to store data. TA uses RocksDB which uses "key-value" based storage.
-// When data goes to MongoDB, it is sent in simple understandable JSON file. However for RocksDB, we need to extract the data from the JSON file
-// such that: Key = "[Owner_Id] + [category] + [Key]", Value = [valBytes]
-// Hence the info required for Key needs to be extracted from JSON file and concatenated into a single byte/string.
-func TaExtractfromFilter(filter bson.M) string {
-	if filter == nil {
-		return ""
-	}
-
-	if ueId, ok := filter["ueId"].(string); ok {
-		// Additional sub-keys:
-		if servingPlmnId, ok := filter["servingPlmnId"].(string); ok {
-			return fmt.Sprintf("%s_%s", ueId, servingPlmnId)
-		}
-		if pduSessionId, ok := filter["pduSessionId"]; ok {
-			return fmt.Sprintf("%s_%v", ueId, pduSessionId)
-		}
-		if limitId, ok := filter["limitId"].(string); ok {
-			return fmt.Sprintf("%s_%s", ueId, limitId)
-		}
-		if usageMonId, ok := filter["usageMonId"].(string); ok {
-			return fmt.Sprintf("%s_%s", ueId, usageMonId)
-		}
-		return ueId
-	}
-
-	if influenceId, ok := filter["influenceId"].(string); ok {
-		return influenceId
-	}
-	if sharedDataId, ok := filter["sharedDataId"].(string); ok {
-		return sharedDataId
-	}
-	if applicationId, ok := filter["applicationId"].(string); ok {
-		return applicationId
-	}
-	if bdtReferenceId, ok := filter["bdtReferenceId"].(string); ok {
-		return bdtReferenceId
-	}
-
-	return fmt.Sprintf("%v", filter)
-}
+// // Free5GC uses MongoDB which utilises "hierarchy-based storage" to store data. TA uses RocksDB which uses "key-value" based storage.
+// // When data goes to MongoDB, it is sent in simple understandable JSON file. However for RocksDB, we need to extract the data from the JSON file
+// // such that: Key = "[Owner_Id] + [category] + [Key]", Value = [valBytes]
+// // Hence the info required for Key needs to be extracted from JSON file and concatenated into a single byte/string.
+// func TaExtractfromFilter(filter bson.M) string {
+// 	if filter == nil {
+// 		return ""
+// 	}
+//
+// 	if ueId, ok := filter["ueId"].(string); ok {
+// 		// Additional sub-keys:
+// 		if servingPlmnId, ok := filter["servingPlmnId"].(string); ok {
+// 			return fmt.Sprintf("%s_%s", ueId, servingPlmnId)
+// 		}
+// 		if pduSessionId, ok := filter["pduSessionId"]; ok {
+// 			return fmt.Sprintf("%s_%v", ueId, pduSessionId)
+// 		}
+// 		if limitId, ok := filter["limitId"].(string); ok {
+// 			return fmt.Sprintf("%s_%s", ueId, limitId)
+// 		}
+// 		if usageMonId, ok := filter["usageMonId"].(string); ok {
+// 			return fmt.Sprintf("%s_%s", ueId, usageMonId)
+// 		}
+// 		return ueId
+// 	}
+//
+// 	if influenceId, ok := filter["influenceId"].(string); ok {
+// 		return influenceId
+// 	}
+// 	if sharedDataId, ok := filter["sharedDataId"].(string); ok {
+// 		return sharedDataId
+// 	}
+// 	if applicationId, ok := filter["applicationId"].(string); ok {
+// 		return applicationId
+// 	}
+// 	if bdtReferenceId, ok := filter["bdtReferenceId"].(string); ok {
+// 		return bdtReferenceId
+// 	}
+//
+// 	return fmt.Sprintf("%v", filter)
+// }
 
 // Unlike TaRead(), this one returns the whole kvpair of a category from the owner space
 func TaGetCategoryEntries(ownerID uint64, category byte) (map[string][]byte, error) {
@@ -262,9 +261,9 @@ func TaGetCategoryEntries(ownerID uint64, category byte) (map[string][]byte, err
 
 // The free5gc already assigns a IEMI subscriber ID for the user. This function helps to locate or create the
 // respective OwnerId for the user and also help to map both the subscriberID and OwnerID using a hashmap table
-func TaGetorCreateOwnerID(ueId string) (uint64, error) {
+func TaGetOwnerID(ueId string) (uint64, error) {
 	if strings.TrimSpace(ueId) == "" {
-		return 0, fmt.Errorf("[TaGCO]: an empty ueID provided") // Owner 1 is reserved for system / Non-UE data
+		return 0, fmt.Errorf("[TaGO]: an empty ueID provided") // Owner 1 is reserved for system / Non-UE data
 	}
 
 	// Check in memory cache. If ownerID already exists, return the ID
@@ -288,30 +287,85 @@ func TaGetorCreateOwnerID(ueId string) (uint64, error) {
 		}
 	}
 
+	return 0, fmt.Errorf("[TaGO]: Owner/Subscriber (%s) not found in the TA", ueId)
+}
+
+func TaCreateOwnerID(ueId string) (uint64, error) {
+	if strings.TrimSpace(ueId) == "" {
+		return 0, fmt.Errorf("[TaCO]: empty ueId")
+	}
+
+	// If it already exists, don't create a duplicate
+	if existingID, err := TaGetOwnerID(ueId); err == nil {
+		return existingID, nil
+	}
+
 	// Register new Owner in Trust Anchor
 	ta.mu.Lock()
 	client := ta.client
 	ta.mu.Unlock()
 
 	if client == nil {
-		return 0, fmt.Errorf("[TaGCO]: Trust anchor client is not initialized")
+		return 0, fmt.Errorf("[TaCO]: Trust anchor client is not initialized")
 	}
 
 	res, err := client.AddOwner(ta.ctx, &pb.AddOwner{})
 	if err != nil {
-		return 0, fmt.Errorf("[TaGCO]: Failed to create new owner in TA for %s: %w", ueId, err)
+		return 0, fmt.Errorf("[TaCO]: Failed to create new owner in TA for %s: %w", ueId, err)
 	}
 	newOwnerID := res.OwnerId
 
 	// Save the link in Trust Anchor under Owner 1
 	if err := TaWrite(1, CategoryDefault, "ue-map/"+ueId, newOwnerID); err != nil {
-		logger.UtilLog.Warnf("[TaGCO]: Failed to persist ue-map in TA for %s: %v", ueId, err)
+		logger.UtilLog.Warnf("[TaCO]: Failed to persist ue-map in TA for %s: %v", ueId, err)
 	}
 	// Update RAM cache
 	ta.ueOwnerCacheMu.Lock()
 	ta.ueOwnerCache[ueId] = newOwnerID
 	ta.ueOwnerCacheMu.Unlock()
 
-	logger.UtilLog.Infof("[TaGCO] Linked UE %s <---> Owner ID: %d", ueId, newOwnerID)
+	logger.UtilLog.Infof("[TaCO] Linked UE %s <---> Owner ID: %d", ueId, newOwnerID)
 	return newOwnerID, nil
+}
+
+// TaDelete removes a single record from Trust Anchor
+func TaDelete(ownerID uint64, category byte, key string) error {
+	// Writing an empty/tombstone entry
+	return TaWrite(ownerID, category, key, []byte{})
+}
+
+// TaDeleteSubscriber completely empties a subscriber's entire owner space
+func TaDeleteOwner(ueId string) error {
+	ownerID, err := TaGetOwnerID(ueId)
+	if err != nil {
+		return fmt.Errorf("[TaDO]: User %s doesn't exist", ueId) // User doesn't even exist
+	}
+
+	// 1. Wipe all keys
+	allCategories := []byte{
+		CategoryDefault,
+		CategoryInfluenceData,
+		CategoryPdf,
+		CategorySubscriptionData,
+		CategoryPolicyData,
+	}
+	for _, cat := range allCategories {
+		entries, err := TaGetCategoryEntries(ownerID, cat)
+		if err == nil {
+			for key := range entries {
+				_ = TaDelete(ownerID, cat, key) // Wipe every entry
+			}
+		}
+	}
+
+	// 2. Wipe the phonebook link in Owner 1
+	_ = TaDelete(1, CategoryDefault, "ue-map/"+ueId)
+
+	// 3. Clean RAM cache
+	ta.ueOwnerCacheMu.Lock()
+	delete(ta.ueOwnerCache, ueId)
+	ta.ueOwnerCacheMu.Unlock()
+
+	logger.UtilLog.Infof("[TaDO] Fully purged subscriber %s (Owner %d)", ueId, ownerID)
+	return nil
 }
