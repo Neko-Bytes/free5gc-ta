@@ -17,17 +17,16 @@ import (
 
 	"github.com/free5gc/udr/internal/logger"
 	"github.com/free5gc/util/metrics/sbi"
-	"github.com/free5gc/util/mongoapi"
+	// [MONGO REMOVED] "github.com/free5gc/util/mongoapi"
 )
 
 func (p *Processor) CreateAuthenticationSoRProcedure(c *gin.Context, collName string, ueId string, putData bson.M) {
 	filter := bson.M{"ueId": ueId}
 	putData["ueId"] = ueId
 
-	if _, err := mongoapi.RestfulAPIPutOne(collName, filter, putData); err != nil {
+	if _, err := p.PutDataToDB(collName, filter, putData); err != nil {
 		logger.DataRepoLog.Errorf("CreateAuthenticationSoRProcedure err: %+v", err)
 	} else {
-		p.TaWriteMirror(collName, filter, putData)
 	}
 
 	c.Status(http.StatusNoContent)

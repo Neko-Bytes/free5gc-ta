@@ -67,14 +67,20 @@ const (
 )
 
 type Configuration struct {
-	NfInstanceId    string   `yaml:"nfInstanceId,omitempty" valid:"optional,uuidv4"`
-	Sbi             *Sbi     `yaml:"sbi" valid:"required"`
-	Metrics         *Metrics `yaml:"metrics,omitempty" valid:"optional"`
-	DbConnectorType DbType   `yaml:"dbConnectorType" valid:"required,in(mongodb)"`
-	Mongodb         *Mongodb `yaml:"mongodb" valid:"optional"`
-	NrfUri          string   `yaml:"nrfUri" valid:"url,required"`
-	NrfCertPem      string   `yaml:"nrfCertPem,omitempty" valid:"optional"`
+	NfInstanceId    string             `yaml:"nfInstanceId,omitempty" valid:"optional,uuidv4"`
+	Sbi             *Sbi               `yaml:"sbi" valid:"required"`
+	Metrics         *Metrics           `yaml:"metrics,omitempty" valid:"optional"`
+	DbConnectorType DbType             `yaml:"dbConnectorType" valid:"required,in(mongodb|trust-anchor)"`
+	Mongodb         *Mongodb           `yaml:"mongodb" valid:"optional"`
+	TrustAnchor     *TrustAnchorConfig `yaml:"trustAnchor" valid:"optional"`
+	NrfUri          string             `yaml:"nrfUri" valid:"url,required"`
+	NrfCertPem      string             `yaml:"nrfCertPem,omitempty" valid:"optional"`
 }
+
+type TrustAnchorConfig struct {
+	Addr string `yaml:"addr"`
+}
+
 
 type Logger struct {
 	Enable       bool   `yaml:"enable" valid:"type(bool)"`

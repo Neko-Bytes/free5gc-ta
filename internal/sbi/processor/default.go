@@ -27,7 +27,7 @@ import (
 	"github.com/free5gc/udr/internal/logger"
 	"github.com/free5gc/udr/internal/util"
 	"github.com/free5gc/util/metrics/sbi"
-	"github.com/free5gc/util/mongoapi"
+	// [MONGO REMOVED] "github.com/free5gc/util/mongoapi"
 )
 
 func (p *Processor) DeleteApplicationDataIndividualPfdFromDBProcedure(c *gin.Context, appID string) {
@@ -54,7 +54,7 @@ func (p *Processor) PutApplicationDataIndividualPfdToDBProcedure(
 	filter := bson.M{"applicationId": appID}
 	data := util.ToBsonM(*pfdDataForApp)
 
-	existed, err := mongoapi.RestfulAPIPutOne(db.APPDATA_PFD_DB_COLLECTION_NAME, filter, data)
+	existed, err := p.PutDataToDB(db.APPDATA_PFD_DB_COLLECTION_NAME, filter, data)
 	if err != nil {
 		logger.DataRepoLog.Errorf("putApplicationDataIndividualPfdToDB err: %+v", err)
 		statusCode := http.StatusInternalServerError
@@ -62,7 +62,6 @@ func (p *Processor) PutApplicationDataIndividualPfdToDBProcedure(
 		c.JSON(statusCode, nil)
 		return
 	}
-	p.TaWriteMirror(db.APPDATA_PFD_DB_COLLECTION_NAME, filter, data)
 
 	if existed {
 		c.JSON(http.StatusOK, data)
@@ -77,7 +76,7 @@ func (p *Processor) GetApplicationDataPfdsFromDBProcedure(c *gin.Context, pfdsAp
 	var matchedPfds []map[string]interface{}
 	if len(pfdsAppIDs) == 0 {
 		var err error
-		matchedPfds, err = mongoapi.RestfulAPIGetMany(db.APPDATA_PFD_DB_COLLECTION_NAME, filter)
+		matchedPfds, err = p.GetManyFromDB(db.APPDATA_PFD_DB_COLLECTION_NAME, filter)
 		if err != nil {
 			logger.DataRepoLog.Errorf("getApplicationDataPfdsFromDB err: %+v", err)
 			c.JSON(http.StatusOK, nil)
@@ -124,7 +123,7 @@ func (p *Processor) PolicyDataBdtDataBdtReferenceIdPutProcedure(
 	putData["bdtReferenceId"] = bdtReferenceId
 	filter := bson.M{"bdtReferenceId": bdtReferenceId}
 
-	existed, err := mongoapi.RestfulAPIPutOne(collName, filter, putData)
+	existed, err := p.PutDataToDB(collName, filter, putData)
 	if err != nil {
 		logger.DataRepoLog.Errorf("putApplicationDataIndividualPfdToDB err: %+v", err)
 		pd := util.ProblemDetailsUpspecified(err.Error())
@@ -132,7 +131,6 @@ func (p *Processor) PolicyDataBdtDataBdtReferenceIdPutProcedure(
 		c.JSON(int(pd.Status), pd)
 		return
 	}
-	p.TaWriteMirror(collName, filter, putData)
 
 	if existed {
 		PreHandlePolicyDataChangeNotification("", bdtReferenceId, bdtData)
@@ -142,7 +140,7 @@ func (p *Processor) PolicyDataBdtDataBdtReferenceIdPutProcedure(
 
 func (p *Processor) PolicyDataBdtDataGetProcedure(c *gin.Context, collName string) {
 	filter := bson.M{}
-	bdtDataArray, err := mongoapi.RestfulAPIGetMany(collName, filter)
+	bdtDataArray, err := p.GetManyFromDB(collName, filter)
 	if err != nil {
 		logger.DataRepoLog.Errorf("PolicyDataBdtDataGetProcedure err: %+v", err)
 		c.JSON(http.StatusOK, nil)
@@ -258,17 +256,8 @@ func (p *Processor) PolicyDataUesUeIdOperatorSpecificDataPatchProcedure(c *gin.C
 ) {
 	filter := bson.M{"ueId": ueId}
 
-	patchJSON, err := json.Marshal(patchItem)
+	_, _, err := p.PatchDataToDBAndNotify(collName, ueId, patchItem, filter)
 	if err != nil {
-		logger.DataRepoLog.Errorf("PolicyDataUesUeIdOperatorSpecificDataPatchProcedure err: %+v", err)
-		pd := util.ProblemDetailsModifyNotAllowed("")
-		c.Set(sbi.IN_PB_DETAILS_CTX_STR, pd.Cause)
-		c.JSON(int(pd.Status), pd)
-		return
-	}
-
-	if err := mongoapi.RestfulAPIJSONPatchExtend(collName, filter, patchJSON,
-		"operatorSpecificDataContainerMap"); err != nil {
 		logger.DataRepoLog.Errorf("PolicyDataUesUeIdOperatorSpecificDataPatchProcedure err: %+v", err)
 		pd := util.ProblemDetailsModifyNotAllowed("")
 		c.Set(sbi.IN_PB_DETAILS_CTX_STR, pd.Cause)
@@ -286,11 +275,10 @@ func (p *Processor) PolicyDataUesUeIdOperatorSpecificDataPutProcedure(c *gin.Con
 	putData := map[string]interface{}{"operatorSpecificDataContainerMap": OperatorSpecificDataContainer}
 	putData["ueId"] = ueId
 
-	_, err := mongoapi.RestfulAPIPutOne(collName, filter, putData)
+	_, err := p.PutDataToDB(collName, filter, putData)
 	if err != nil {
 		logger.DataRepoLog.Errorf("PolicyDataUesUeIdOperatorSpecificDataPutProcedure err: %+v", err)
 	} else {
-		p.TaWriteMirror(collName, filter, putData)
 	}
 	c.Status(http.StatusOK)
 }
@@ -301,7 +289,7 @@ func (p *Processor) PolicyDataUesUeIdSmDataGetProcedure(
 ) {
 	filter := bson.M{"ueId": ueId}
 
-	smPolicyData, pd := p.GetDataFromDBWithArg(collName, filter, mongoapi.COLLATION_STRENGTH_IGNORE_CASE)
+	smPolicyData, pd := p.GetDataFromDBWithArg(collName, filter, 0)
 	if pd != nil {
 		c.Set(sbi.IN_PB_DETAILS_CTX_STR, pd.Cause)
 		c.JSON(int(pd.Status), pd)
@@ -365,7 +353,7 @@ func (p *Processor) PolicyDataUesUeIdSmDataGetProcedure(
 	}
 	smPolicyDataResp.SmPolicySnssaiData = tmpSmPolicySnssaiData
 	filter = bson.M{"ueId": ueId}
-	usageMonDataMapArray, err := mongoapi.RestfulAPIGetMany("policyData.ues.smData.usageMonData", filter)
+	usageMonDataMapArray, err := p.GetManyFromDB("policyData.ues.smData.usageMonData", filter)
 	if err != nil {
 		logger.DataRepoLog.Errorf("PolicyDataUesUeIdSmDataGetProcedure err: %+v", err)
 	}
@@ -393,7 +381,7 @@ func (p *Processor) PolicyDataUesUeIdSmDataPatchProcedure(c *gin.Context, collNa
 	for k, usageMonData := range UsageMonData {
 		limitId := k
 		filterTmp := bson.M{"ueId": ueId, "limitId": limitId}
-		if err := mongoapi.RestfulAPIMergePatch(collName, filterTmp, util.ToBsonM(usageMonData)); err != nil {
+		if _, err := p.PutDataToDB(collName, filterTmp, util.ToBsonM(usageMonData)); err != nil {
 			successAll = false
 		} else {
 			var usageMonData models.UsageMonData
@@ -404,7 +392,6 @@ func (p *Processor) PolicyDataUesUeIdSmDataPatchProcedure(c *gin.Context, collNa
 				c.JSON(int(pd.Status), pd)
 				return
 			}
-			p.TaWriteMirror(collName, filterTmp, usageMonDataBsonM)
 			if err := json.Unmarshal(util.MapToByte(usageMonDataBsonM), &usageMonData); err != nil {
 				logger.DataRepoLog.Warnln(err)
 			}
@@ -427,7 +414,7 @@ func (p *Processor) PolicyDataUesUeIdSmDataPatchProcedure(c *gin.Context, collNa
 
 		collName := "policyData.ues.smData.usageMonData"
 		filter := bson.M{"ueId": ueId}
-		usageMonDataMapArray, err := mongoapi.RestfulAPIGetMany(collName, filter)
+		usageMonDataMapArray, err := p.GetManyFromDB(collName, filter)
 		if err != nil {
 			logger.DataRepoLog.Errorf("PolicyDataUesUeIdSmDataPatchProcedure err: %+v", err)
 		}
@@ -482,7 +469,7 @@ func (p *Processor) PolicyDataUesUeIdSmDataUsageMonIdPutProcedure(
 	putData["usageMonId"] = usageMonId
 	filter := bson.M{"ueId": ueId, "usageMonId": usageMonId}
 
-	_, err := mongoapi.RestfulAPIPutOne(collName, filter, putData)
+	_, err := p.PutDataToDB(collName, filter, putData)
 	if err != nil {
 		logger.DataRepoLog.Errorf("PolicyDataUesUeIdSmDataUsageMonIdPutProcedure err: %+v", err)
 		pd := util.ProblemDetailsUpspecified("")
@@ -490,7 +477,6 @@ func (p *Processor) PolicyDataUesUeIdSmDataUsageMonIdPutProcedure(
 		c.JSON(int(pd.Status), pd)
 		return
 	}
-	p.TaWriteMirror(collName, filter, putData)
 	c.JSON(http.StatusOK, putData)
 }
 
@@ -514,14 +500,13 @@ func (p *Processor) PolicyDataUesUeIdUePolicySetPatchProcedure(c *gin.Context, c
 	patchData["ueId"] = ueId
 	filter := bson.M{"ueId": ueId}
 
-	if err := mongoapi.RestfulAPIMergePatch(collName, filter, patchData); err != nil {
+	if _, err := p.PutDataToDB(collName, filter, patchData); err != nil {
 		logger.DataRepoLog.Errorf("PolicyDataUesUeIdUePolicySetPatchProcedure err: %+v", err)
 		pd := util.ProblemDetailsModifyNotAllowed("")
 		c.Set(sbi.IN_PB_DETAILS_CTX_STR, pd.Cause)
 		c.JSON(int(pd.Status), pd)
 		return
 	} else {
-		p.TaWriteMirror(collName, filter, patchData)
 	}
 
 	var uePolicySet models.UePolicySet
@@ -550,12 +535,11 @@ func (p *Processor) PolicyDataUesUeIdUePolicySetPutProcedure(c *gin.Context, col
 	putData["ueId"] = ueId
 	filter := bson.M{"ueId": ueId}
 
-	existed, err := mongoapi.RestfulAPIPutOne(collName, filter, putData)
+	existed, err := p.PutDataToDB(collName, filter, putData)
 	if err != nil {
 		logger.DataRepoLog.Errorf("PolicyDataUesUeIdUePolicySetPutProcedure err: %+v", err)
 		c.Status(http.StatusInternalServerError)
 	} else {
-		p.TaWriteMirror(collName, filter, putData)
 	}
 	if existed {
 		c.Status(http.StatusNoContent)

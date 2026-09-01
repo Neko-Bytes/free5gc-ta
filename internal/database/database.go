@@ -5,6 +5,7 @@ import (
 
 	"github.com/free5gc/openapi/models"
 	"github.com/free5gc/udr/internal/database/mongodb"
+	"github.com/free5gc/udr/internal/database/tadb"
 	"github.com/free5gc/udr/internal/logger"
 	"github.com/free5gc/udr/pkg/factory"
 )
@@ -14,7 +15,8 @@ const (
 	APPDATA_INFLUDATA_SUBSC_DB_COLLECTION_NAME = "applicationData.influenceData.subsToNotify"
 	APPDATA_PFD_DB_COLLECTION_NAME             = "applicationData.pfds"
 
-	DBCONNECTOR_TYPE_MONGODB factory.DbType = "mongodb"
+	DBCONNECTOR_TYPE_MONGODB     factory.DbType = "mongodb"
+	DBCONNECTOR_TYPE_TRUSTANCHOR factory.DbType = "trust-anchor"
 )
 
 type DbConnector interface {
@@ -23,11 +25,16 @@ type DbConnector interface {
 	GetDataFromDB(collName string, filter bson.M) (map[string]interface{}, *models.ProblemDetails)
 	GetDataFromDBWithArg(collName string, filter bson.M, strength int) (map[string]interface{}, *models.ProblemDetails)
 	DeleteDataFromDB(collName string, filter bson.M)
+	PutDataToDB(collName string, filter bson.M, data map[string]interface{}) (bool, error)
+	GetManyFromDB(collName string, filter bson.M) ([]map[string]interface{}, error)
+	DeleteOwnerFromDB(ueId string) error
 }
 
 func NewDbConnector(dbName factory.DbType) DbConnector {
 	if dbName == DBCONNECTOR_TYPE_MONGODB {
 		return mongodb.NewMongoDbConnector(factory.UdrConfig.Configuration.Mongodb)
+	} else if dbName == DBCONNECTOR_TYPE_TRUSTANCHOR {
+		return tadb.NewTaDbConnector()
 	} else {
 		logger.DbLog.Fatalf("Unsupported database type: %s", dbName)
 		return nil

@@ -22,7 +22,7 @@ import (
 	"github.com/free5gc/udr/pkg/factory"
 	"github.com/free5gc/util/metrics"
 	"github.com/free5gc/util/metrics/utils"
-	"github.com/free5gc/util/mongoapi"
+	// [MONGO REMOVED] "github.com/free5gc/util/mongoapi"
 
 	"github.com/free5gc/udr/internal/ta"
 )
@@ -196,18 +196,22 @@ func (a *UdrApp) Start() {
 	// get config file info
 	logger.InitLog.Infoln("Server started")
 	config := factory.UdrConfig
-	mongodb := config.Configuration.Mongodb
+	// [MONGO REMOVED] mongodb := config.Configuration.Mongodb
 
 	logger.InitLog.Infof("UDR Config Info: Version[%s] Description[%s]", config.Info.Version, config.Info.Description)
 
 	// Connect to MongoDB
-	if err := mongoapi.SetMongoDB(mongodb.Name, mongodb.Url); err != nil {
-		logger.InitLog.Errorf("UDR start set MongoDB error: %+v", err)
-		return
-	}
+	// [MONGO REMOVED] if err := mongoapi.SetMongoDB(mongodb.Name, mongodb.Url); err != nil {
+	// [MONGO REMOVED] 	logger.InitLog.Errorf("UDR start set MongoDB error: %+v", err)
+	// [MONGO REMOVED] 	return
+	// [MONGO REMOVED] }
 
 	// Connect to Trust Anchor
-	if err := ta.TaInit("localhost:9000"); err != nil {
+	taAddr := "localhost:9000" // default
+	if config.Configuration.TrustAnchor != nil && config.Configuration.TrustAnchor.Addr != "" {
+		taAddr = config.Configuration.TrustAnchor.Addr
+	}
+	if err := ta.TaInit(taAddr); err != nil {
 		logger.InitLog.Errorf("Trust Anchor initialisation failed: %v", err)
 	}
 

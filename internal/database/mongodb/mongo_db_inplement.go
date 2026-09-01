@@ -11,8 +11,6 @@ import (
 	"github.com/free5gc/udr/internal/util"
 	"github.com/free5gc/udr/pkg/factory"
 	"github.com/free5gc/util/mongoapi"
-
-	"github.com/free5gc/udr/internal/ta"
 )
 
 type MongoDbConnector struct {
@@ -46,14 +44,6 @@ func (m MongoDbConnector) PatchDataToDBAndNotify(
 	if err != nil {
 		return
 	}
-
-	// Mirror write to Trust Anchor asynchronously
-	key := ta.TaExtractfromFilter(filter)
-	go func() {
-		if taErr := ta.TaWriteByCollName(collName, key, newValue); taErr != nil {
-			logger.DataRepoLog.Errorf("Mirror to TA failed: %v", taErr)
-		}
-	}()
 
 	return
 }
@@ -91,4 +81,16 @@ func (m MongoDbConnector) DeleteDataFromDB(collName string, filter bson.M) {
 	if err := mongoapi.RestfulAPIDeleteOne(collName, filter); err != nil {
 		logger.DataRepoLog.Errorf("deleteDataFromDB: %+v", err)
 	}
+}
+
+func (m MongoDbConnector) PutDataToDB(collName string, filter bson.M, data map[string]interface{}) (bool, error) {
+	return mongoapi.RestfulAPIPutOne(collName, filter, data)
+}
+
+func (m MongoDbConnector) GetManyFromDB(collName string, filter bson.M) ([]map[string]interface{}, error) {
+	return mongoapi.RestfulAPIGetMany(collName, filter)
+}
+
+func (m MongoDbConnector) DeleteOwnerFromDB(ueId string) error {
+	return nil
 }

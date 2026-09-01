@@ -23,7 +23,7 @@ import (
 	"github.com/free5gc/udr/internal/logger"
 	"github.com/free5gc/udr/internal/util"
 	"github.com/free5gc/util/metrics/sbi"
-	"github.com/free5gc/util/mongoapi"
+	// [MONGO REMOVED] "github.com/free5gc/util/mongoapi"
 )
 
 func (p *Processor) ApplicationDataInfluenceDataInfluenceIdPutProcedure(
@@ -35,16 +35,14 @@ func (p *Processor) ApplicationDataInfluenceDataInfluenceIdPutProcedure(
 
 	var original *models.TrafficInfluData
 
-	if mapData, err := mongoapi.RestfulAPIGetOne(collName, filter); err != nil {
-		logger.DataRepoLog.Error(err.Error())
-		problemDetails := &models.ProblemDetails{
-			Status: http.StatusInternalServerError,
-			Detail: err.Error(),
-		}
-		c.Set(sbi.IN_PB_DETAILS_CTX_STR, http.StatusText(int(problemDetails.Status)))
-		c.JSON(int(problemDetails.Status), problemDetails)
+	mapData, pd := p.GetDataFromDB(collName, filter)
+	if pd != nil && pd.Cause != "DATA_NOT_FOUND" {
+		logger.DataRepoLog.Error(pd.Detail)
+		c.Set(sbi.IN_PB_DETAILS_CTX_STR, http.StatusText(int(pd.Status)))
+		c.JSON(int(pd.Status), pd)
 		return
 	} else {
+
 		if len(mapData) != 0 {
 			original = new(models.TrafficInfluData)
 			byteData, err := json.Marshal(mapData)
@@ -72,7 +70,7 @@ func (p *Processor) ApplicationDataInfluenceDataInfluenceIdPutProcedure(
 		}
 	}
 
-	isExisted, err := mongoapi.RestfulAPIPutOne(collName, filter, putData)
+	isExisted, err := p.PutDataToDB(collName, filter, putData)
 	if err != nil {
 		logger.DataRepoLog.Errorf("ApplicationDataInfluenceDataInfluenceIdPutProcedure err: %+v", err)
 		problemDetails := &models.ProblemDetails{
@@ -83,7 +81,6 @@ func (p *Processor) ApplicationDataInfluenceDataInfluenceIdPutProcedure(
 		c.JSON(int(problemDetails.Status), problemDetails)
 		return
 	}
-	p.TaWriteMirror(collName, filter, putData)
 	if original == nil || !reflect.DeepEqual(*original, *request) {
 		// Notify the change of influence data
 		PreHandleInfluenceDataUpdateNotification(influenceId, original, request)

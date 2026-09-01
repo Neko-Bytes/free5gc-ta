@@ -19,7 +19,7 @@ import (
 	"github.com/free5gc/udr/internal/logger"
 	"github.com/free5gc/udr/internal/util"
 	"github.com/free5gc/util/metrics/sbi"
-	"github.com/free5gc/util/mongoapi"
+	// [MONGO REMOVED] "github.com/free5gc/util/mongoapi"
 )
 
 func (p *Processor) AmfContextNon3gppProcedure(
@@ -47,10 +47,9 @@ func (p *Processor) CreateAmfContextNon3gppProcedure(
 	putData["ueId"] = ueId
 	filter := bson.M{"ueId": ueId}
 
-	if _, err := mongoapi.RestfulAPIPutOne(collName, filter, putData); err != nil {
+	if _, err := p.PutDataToDB(collName, filter, putData); err != nil {
 		logger.DataRepoLog.Errorf("CreateAmfContextNon3gppProcedure err: %+v", err)
 	} else {
-		p.TaWriteMirror(collName, filter, putData)
 	}
 
 	c.Data(http.StatusNoContent, "application/json", nil)

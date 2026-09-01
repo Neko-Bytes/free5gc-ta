@@ -21,7 +21,7 @@ import (
 	"github.com/free5gc/udr/internal/logger"
 	"github.com/free5gc/udr/internal/util"
 	"github.com/free5gc/util/metrics/sbi"
-	"github.com/free5gc/util/mongoapi"
+	// [MONGO REMOVED] "github.com/free5gc/util/mongoapi"
 )
 
 func (p *Processor) QuerySmDataProcedure(c *gin.Context, collName string, ueId string, servingPlmnId string,
@@ -44,8 +44,8 @@ func (p *Processor) QuerySmDataProcedure(c *gin.Context, collName string, ueId s
 	}
 	resp := models.SmSubsData{}
 
-	sessionManagementSubscriptionDatas, err := mongoapi.
-		RestfulAPIGetMany(collName, filter, mongoapi.COLLATION_STRENGTH_IGNORE_CASE)
+	// [MONGO REMOVED] sessionManagementSubscriptionDatas, err := mongoapi.RestfulAPIGetMany(collName, filter, 0)
+	sessionManagementSubscriptionDatas, err := p.GetManyFromDB(collName, filter)
 	if err != nil {
 		logger.DataRepoLog.Errorf("QuerySmDataProcedure err: %+v", err)
 		pd := util.ProblemDetailsUpspecified("")
