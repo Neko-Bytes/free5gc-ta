@@ -131,15 +131,37 @@ DB_DROP_COLLECTION=(
     "exposureData.subsToNotify"
 )
 
-MONGO_SCRIPT=""
-for COLLECTION in "${DB_DROP_COLLECTION[@]}"
-do
-    MONGO_SCRIPT+="db.$COLLECTION.drop();"
-done
-if command -v mongosh &> /dev/null; then
-    mongosh "$DB_NAME" --eval "$MONGO_SCRIPT" 
+# Only attempt MongoDB cleanup if MongoDB port is reachable
+if (timeout 1 bash -c "</dev/tcp/127.0.0.1/27017" &> /dev/null); then
+    MONGO_SCRIPT=""
+    for COLLECTION in "${DB_DROP_COLLECTION[@]}"
+    do
+        MONGO_SCRIPT+="db.$COLLECTION.drop();"
+    done
+    if command -v mongosh &> /dev/null; then
+        mongosh "$DB_NAME" --eval "$MONGO_SCRIPT" --quiet &> /dev/null
+    elif command -v mongo &> /dev/null; then
+        mongo "$DB_NAME" --eval "$MONGO_SCRIPT" --quiet &> /dev/null
+    fi
 else
-    mongo "$DB_NAME" --eval "$MONGO_SCRIPT"
+    echo "[INFO] MongoDB is not running on 127.0.0.1:27017 (skipping collection drop)"
+fi
+
+# Check if Trust Anchor is running for UDR (wait up to 30s)
+echo "[INFO] Waiting for Trust Anchor on 127.0.0.1:9000..."
+TA_READY=0
+for i in $(seq 1 30); do
+    if (timeout 1 bash -c "</dev/tcp/127.0.0.1/9000" &> /dev/null); then
+        sleep 1
+        echo "[INFO] Trust Anchor is reachable on 127.0.0.1:9000 (ready after ${i}s)"
+        TA_READY=1
+        break
+    fi
+    sleep 1
+done
+
+if [ $TA_READY -eq 0 ]; then
+    echo "[WARN] Trust Anchor is NOT reachable on 127.0.0.1:9000 after 30s! UDR will retry connecting in background."
 fi
 
 sleep 0.1
@@ -181,5 +203,5 @@ if [ $TNGF_ENABLE -ne 0 ]; then
     PID_LIST+=($SUDO_TNGF_PID $TNGF_PID)
 fi
 
-wait ${PID_LIST}
+wait "${PID_LIST[@]}"
 exit 0

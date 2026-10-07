@@ -6,6 +6,8 @@ configuration:
   mongodb: # the mongodb connected by this webui
     name: free5gc # name of the mongodb
     url: mongodb://localhost:27017 # a valid URL of the mongodb
+  trustAnchor:
+    addr: 127.0.0.1:9000
   nrfUri: http://127.0.0.10:8000 # a valid URI of NRF
   webServer:
     scheme: http

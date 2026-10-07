@@ -44,3 +44,7 @@ testing_output/
 
 # personal
 graphify-out/
+.opencode/
+node_modules/
+opencode.jsonc
+AGENTS.md
