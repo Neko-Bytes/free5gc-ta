@@ -3,9 +3,9 @@ package ta
 import (
 	"context"
 	"encoding/binary"
-	"encoding/json"
+	// "encoding/json"
 	"fmt"
-	"strings"
+	// "strings"
 	"sync"
 	"time"
 
@@ -16,7 +16,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-type TaClient struct {
+type TrustAnchorConnector struct {
 	conn    *grpc.ClientConn
 	client  pb.TrustAnchorClient
 	ownerID uint64
@@ -28,7 +28,7 @@ type TaClient struct {
 	ueOwnerCacheMu sync.RWMutex // Using RWMutex to allow multiple reads.
 }
 
-var ta = &TaClient{
+var taConnector = &TrustAnchorConnector{
 	ueOwnerCache: make(map[string]uint64),
 }
 
@@ -40,17 +40,17 @@ const (
 	CategoryPolicyData       byte = 0x04
 )
 
-var max_retries = 5
+var max_retries = 30
 var retry_delay = 2 * time.Second
 
 func TaInit(address string) error {
-	ta.mu.Lock()
-	defer ta.mu.Unlock()
+	taConnector.mu.Lock()
+	defer taConnector.mu.Unlock()
 
 	var lastErr error
 	// To avoid duplicate connection
-	if ta.client != nil {
-		logger.InitLog.Warnln("A TaClient connection already exists!")
+	if taConnector.client != nil {
+		logger.InitLog.Warnln("A TrustAnchorConnector connection already exists!")
 		return nil
 	}
 
@@ -63,48 +63,57 @@ func TaInit(address string) error {
 			continue
 		}
 
-		ta.conn = c
+		taConnector.conn = c
 		// Create a new client in ta
-		ta.client = pb.NewTrustAnchorClient(ta.conn)
+		taConnector.client = pb.NewTrustAnchorClient(taConnector.conn)
 
 		// Add the client as owner to ta db
-		res, err := ta.client.AddOwner(context.Background(), &pb.AddOwner{})
+		res, err := taConnector.client.AddOwner(context.Background(), &pb.AddOwner{})
 		if err != nil {
-			ta.conn.Close()
+			_ = taConnector.conn.Close()
+			taConnector.conn = nil
+			taConnector.client = nil
 			lastErr = fmt.Errorf("Failed to register owner: %w. Restarting the connection ...", err)
 			time.Sleep(retry_delay)
 			continue
 		}
 
-		ta.ownerID = res.OwnerId
+		taConnector.ownerID = res.OwnerId
 
 		// Package ownerID as metadata
 		ownerBytes := make([]byte, 8)
-		binary.BigEndian.PutUint64(ownerBytes, ta.ownerID)
-		ta.ctx = metadata.AppendToOutgoingContext(context.Background(), "id-bin", string(ownerBytes))
+		binary.BigEndian.PutUint64(ownerBytes, taConnector.ownerID)
+		taConnector.ctx = metadata.AppendToOutgoingContext(context.Background(), "id-bin", string(ownerBytes))
 
-		logger.InitLog.Infof("[TA Client] [Owner ID: %d] Connected to TA successfully. Attempts: %d", ta.ownerID, i)
+		logger.InitLog.Infof("[TA Client] [Owner ID: %d] Connected to TA successfully. Attempts: %d", taConnector.ownerID, i)
 		return nil
 	}
+
+	if taConnector.conn != nil {
+		_ = taConnector.conn.Close()
+		taConnector.conn = nil
+	}
+	taConnector.client = nil
 
 	return fmt.Errorf("Failed to initialise TA-Client after %d attempts: %w", max_retries, lastErr)
 }
 
 // Close GRPC connection and empty the variables
 func TaClose() error {
-	ta.mu.Lock()
-	defer ta.mu.Unlock()
+	taConnector.mu.Lock()
+	defer taConnector.mu.Unlock()
 
-	if ta.conn != nil {
-		err := ta.conn.Close()
+	if taConnector.conn != nil {
+		err := taConnector.conn.Close()
 
-		ta.conn = nil
-		ta.client = nil
+		taConnector.conn = nil
+		taConnector.client = nil
 		return err
 	}
 	return nil
 }
 
+/*
 // TaWrite writes a JSON-serializable value to a specific owner, category, and key in Trust Anchor
 func TaWrite(ownerID uint64, category byte, key string, value interface{}) error {
 	// Apparently GRPC calls are thread-safe operations. However our taClient variable isn't. To avoid data-races, add mutex lock, copy the global
@@ -369,3 +378,4 @@ func TaDeleteOwner(ueId string) error {
 	logger.UtilLog.Infof("[TaDO] Fully purged subscriber %s (Owner %d)", ueId, ownerID)
 	return nil
 }
+*/

@@ -199,11 +199,23 @@ func resolveOwnerAndKeyForWrite(collName string, filter bson.M) (uint64, string,
 
 func buildKey(collName string, filter bson.M) string {
 	if filter != nil {
-		if servingPlmnId, ok := filter["servingPlmnId"].(string); ok {
-			return "amData_" + servingPlmnId
+		if strings.Contains(collName, "amData") {
+			if servingPlmnId, ok := filter["servingPlmnId"].(string); ok {
+				return "amData_" + servingPlmnId
+			}
+		}
+		if strings.Contains(collName, "smfSelection") || strings.Contains(collName, "smfSelData") {
+			if servingPlmnId, ok := filter["servingPlmnId"].(string); ok {
+				return "smfSelData_" + servingPlmnId
+			}
+		}
+		if strings.Contains(collName, "smData") {
+			if servingPlmnId, ok := filter["servingPlmnId"].(string); ok {
+				return "smData_" + servingPlmnId
+			}
 		}
 		if pduSessionId, ok := filter["pduSessionId"]; ok {
-			return fmt.Sprintf("smfReg_%v", pduSessionId)
+			return fmt.Sprintf("context_smf_%v", pduSessionId)
 		}
 		if limitId, ok := filter["limitId"].(string); ok {
 			return "limit_" + limitId
@@ -219,6 +231,9 @@ func buildKey(collName string, filter bson.M) string {
 		}
 		if bdtReferenceId, ok := filter["bdtReferenceId"].(string); ok {
 			return bdtReferenceId
+		}
+		if servingPlmnId, ok := filter["servingPlmnId"].(string); ok {
+			return collName + "_" + servingPlmnId
 		}
 	}
 
@@ -239,6 +254,10 @@ func buildKey(collName string, filter bson.M) string {
 		return "context_smsfNon3gpp"
 	case strings.Contains(collName, "smsf3gpp"):
 		return "context_smsf3gpp"
+	case strings.Contains(collName, "policyData.") && strings.Contains(collName, "amData"):
+		return "amPolicy"
+	case strings.Contains(collName, "policyData.") && strings.Contains(collName, "smData"):
+		return "smPolicy"
 	default:
 		return collName
 	}

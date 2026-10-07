@@ -7,6 +7,7 @@ import (
 	"os"
 	"runtime/debug"
 	"sync"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -212,7 +213,16 @@ func (a *UdrApp) Start() {
 		taAddr = config.Configuration.TrustAnchor.Addr
 	}
 	if err := ta.TaInit(taAddr); err != nil {
-		logger.InitLog.Errorf("Trust Anchor initialisation failed: %v", err)
+		logger.InitLog.Errorf("Trust Anchor initialisation failed: %v. Starting background reconnection...", err)
+		go func() {
+			for {
+				time.Sleep(3 * time.Second)
+				if err := ta.TaInit(taAddr); err == nil {
+					logger.InitLog.Infof("Trust Anchor reconnected successfully in background!")
+					break
+				}
+			}
+		}()
 	}
 
 	// Graceful deregister when panic
