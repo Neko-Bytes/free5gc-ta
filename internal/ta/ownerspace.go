@@ -13,6 +13,7 @@ func TaWrite(ownerID uint64, category byte, key string, value interface{}) error
 	// taclient pointer to a local variable so that we can read the address of the ptr safely without bothering the main pointer.
 	taConnector.mu.Lock()
 	client := taConnector.client
+	taID := taConnector.taID
 	taConnector.mu.Unlock()
 
 	if client == nil {
@@ -31,6 +32,7 @@ func TaWrite(ownerID uint64, category byte, key string, value interface{}) error
 			OwnerId:  ownerID,
 			Category: []byte{category},
 			Key:      []byte(key),
+			TaId:     taID,
 		},
 		Value: valBytes,
 	}
@@ -54,6 +56,7 @@ func TaWriteByCollName(collName string, key string, value interface{}) error {
 func TaRead(ownerID uint64, category byte, keyString string) ([]byte, error) {
 	taConnector.mu.Lock()
 	taclient := taConnector.client
+	taID := taConnector.taID
 	taConnector.mu.Unlock()
 
 	if taclient == nil {
@@ -65,6 +68,7 @@ func TaRead(ownerID uint64, category byte, keyString string) ([]byte, error) {
 			OwnerId:  ownerID,
 			Category: []byte{category},
 			Key:      []byte(keyString),
+			TaId:     taID,
 		},
 		IncludeProof: false,
 	}

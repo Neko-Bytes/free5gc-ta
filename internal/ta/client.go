@@ -3,6 +3,7 @@ package ta
 import (
 	"context"
 	"encoding/binary"
+
 	// "encoding/json"
 	"fmt"
 	// "strings"
@@ -20,6 +21,7 @@ type TrustAnchorConnector struct {
 	conn    *grpc.ClientConn
 	client  pb.TrustAnchorClient
 	ownerID uint64
+	taID    string
 	mu      sync.Mutex
 	ctx     context.Context
 
@@ -32,12 +34,21 @@ var taConnector = &TrustAnchorConnector{
 	ueOwnerCache: make(map[string]uint64),
 }
 
+// GetTaID returns the local Trust Anchor ID persisted at init time.
+// It is used as Location.TaId for local owner data.
+func GetTaID() string {
+	taConnector.mu.Lock()
+	defer taConnector.mu.Unlock()
+	return taConnector.taID
+}
+
 const (
 	CategoryDefault          byte = 0x00
 	CategoryInfluenceData    byte = 0x01
 	CategoryPdf              byte = 0x02
 	CategorySubscriptionData byte = 0x03
 	CategoryPolicyData       byte = 0x04
+	CategoryPhonebook        byte = 0x10
 )
 
 var max_retries = 30
@@ -79,13 +90,22 @@ func TaInit(address string) error {
 		}
 
 		taConnector.ownerID = res.OwnerId
+		taConnector.taID = res.GetTaId()
+		if taConnector.taID == "" {
+			// Older TA may leave AddOwnerResponse.ta_id empty; fall back to get_ta_id.
+			if idRes, err := taConnector.client.GetTaId(context.Background(), &pb.Empty{}); err != nil {
+				logger.InitLog.Warnf("[TA Client] AddOwnerResponse.ta_id empty and GetTaId fallback failed: %v", err)
+			} else {
+				taConnector.taID = idRes.GetTaId()
+			}
+		}
 
 		// Package ownerID as metadata
 		ownerBytes := make([]byte, 8)
 		binary.BigEndian.PutUint64(ownerBytes, taConnector.ownerID)
 		taConnector.ctx = metadata.AppendToOutgoingContext(context.Background(), "id-bin", string(ownerBytes))
 
-		logger.InitLog.Infof("[TA Client] [Owner ID: %d] Connected to TA successfully. Attempts: %d", taConnector.ownerID, i)
+		logger.InitLog.Infof("[TA Client] [Owner ID: %d] [TA ID: %s] Connected to TA successfully. Attempts: %d", taConnector.ownerID, taConnector.taID, i)
 		return nil
 	}
 
@@ -94,6 +114,7 @@ func TaInit(address string) error {
 		taConnector.conn = nil
 	}
 	taConnector.client = nil
+	taConnector.taID = ""
 
 	return fmt.Errorf("Failed to initialise TA-Client after %d attempts: %w", max_retries, lastErr)
 }
@@ -108,6 +129,7 @@ func TaClose() error {
 
 		taConnector.conn = nil
 		taConnector.client = nil
+		taConnector.taID = ""
 		return err
 	}
 	return nil

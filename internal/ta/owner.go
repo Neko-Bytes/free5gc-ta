@@ -1,7 +1,6 @@
 package ta
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -24,20 +23,16 @@ func TaGetOwnerID(ueId string) (uint64, error) {
 	}
 	taConnector.ueOwnerCacheMu.RUnlock()
 
-	// Check in TA DB. If ownerID already exists, return the ID
-	// Check the link table (Owner 1, CategoryDefault, Key: "ue-map/" + ueId)
-	mapData, err := TaRead(1, CategoryDefault, "ue-map/"+ueId)
-	if err == nil && len(mapData) > 0 {
-		var storedID uint64
-		if err := json.Unmarshal(mapData, &storedID); err == nil && storedID > 0 {
-			taConnector.ueOwnerCacheMu.Lock()
-			taConnector.ueOwnerCache[ueId] = storedID
-			taConnector.ueOwnerCacheMu.Unlock()
-			return storedID, nil
-		}
+	// checks the phonebook in TA db
+	id, err := phonebookScanner(ueId)
+	if err != nil {
+		return 0, fmt.Errorf("[TaGO]%w", err)
 	}
+	taConnector.ueOwnerCacheMu.Lock()
+	taConnector.ueOwnerCache[ueId] = id
+	taConnector.ueOwnerCacheMu.Unlock()
 
-	return 0, fmt.Errorf("[TaGO]: Owner/Subscriber (%s) not found in the TA", ueId)
+	return id, nil
 }
 
 // TaCreateOwnerID allocates a new OwnerID in Trust Anchor for a subscriber if one does not already exist,
@@ -68,15 +63,19 @@ func TaCreateOwnerID(ueId string) (uint64, error) {
 	newOwnerID := res.OwnerId
 
 	// Save the link in Trust Anchor under Owner 1
-	if err := TaWrite(1, CategoryDefault, "ue-map/"+ueId, newOwnerID); err != nil {
-		logger.UtilLog.Warnf("[TaCO]: Failed to persist ue-map in TA for %s: %v", ueId, err)
+	if err := phonebookInsert(ueId, newOwnerID); err != nil {
+		return 0, fmt.Errorf("[TaCO]%w", err)
+	}
+
+	if err := TaWrite(newOwnerID, CategorySubscriptionData, "subscriber-id", ueId); err != nil {
+		logger.UtilLog.Warnf("[TaCO]: Failed to write subscriber-id label for %s (Owner %d): %v", ueId, newOwnerID, err)
 	}
 	// Update RAM cache
 	taConnector.ueOwnerCacheMu.Lock()
 	taConnector.ueOwnerCache[ueId] = newOwnerID
 	taConnector.ueOwnerCacheMu.Unlock()
 
-	logger.UtilLog.Infof("[TaCO] Linked UE %s <---> Owner ID: %d", ueId, newOwnerID)
+	logger.UtilLog.Infof("[TaCO] Linked UeID: %s <---> Owner ID: %d", ueId, newOwnerID)
 	return newOwnerID, nil
 }
 
@@ -106,7 +105,9 @@ func TaDeleteOwner(ueId string) error {
 	}
 
 	// 2. Wipe the phonebook link in Owner 1
-	_ = TaDelete(1, CategoryDefault, "ue-map/"+ueId)
+	if err := PhonebookDelete(ueId); err != nil {
+		logger.UtilLog.Warnf("[TaDO]%v", err)
+	}
 
 	// 3. Clean RAM cache
 	taConnector.ueOwnerCacheMu.Lock()
