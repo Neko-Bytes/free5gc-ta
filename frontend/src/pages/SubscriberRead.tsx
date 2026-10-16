@@ -49,68 +49,40 @@ export default function SubscriberRead() {
   };
 
   const isDefaultNssai = (nssai: Nssai | undefined) => {
-    if (nssai === undefined || data == null) {
-      return false;
-    } else {
-      for (
-        let i = 0;
-        i < data.AccessAndMobilitySubscriptionData!.nssai!.defaultSingleNssais!.length;
-        i++
-      ) {
-        const defaultNssai = data.AccessAndMobilitySubscriptionData!.nssai!.defaultSingleNssais![i];
-        if (defaultNssai.sd === nssai.sd && defaultNssai.sst === nssai.sst) {
-          return true;
-        }
-      }
+    if (!nssai || !data) {
       return false;
     }
+    const defaultNssais = data.AccessAndMobilitySubscriptionData?.nssai?.defaultSingleNssais ?? [];
+    return defaultNssais.some((defaultNssai) => defaultNssai.sd === nssai.sd && defaultNssai.sst === nssai.sst);
   };
 
   const imsiValue = (imsi: string | undefined) => {
-    if (imsi === undefined) {
+    if (!imsi) {
       return "";
-    } else {
-      return imsi.replace("imsi-", "");
     }
+    return imsi.replace("imsi-", "");
   };
 
   const msisdnValue = (subData: AccessAndMobilitySubscriptionData | undefined) => {
-    if (subData === undefined) {
+    if (!subData || !subData.gpsis || subData.gpsis.length === 0) {
       return "";
-    } else {
-      if (subData.gpsis !== undefined && subData.gpsis!.length !== 0) {
-        return subData.gpsis[0].replaceAll("msisdn-", "");
-      } else {
-        return "";
-      }
     }
+    return (subData.gpsis[0] ?? "").replaceAll("msisdn-", "");
   };
 
   const operationCodeType = (auth: AuthenticationSubscription | undefined) => {
-    if (auth !== undefined) {
-      if (
-        auth.milenage !== undefined &&
-        auth.milenage.op !== undefined &&
-        auth.milenage.op.opValue !== ""
-      ) {
-        return "OP";
-      } else {
-        return "OPc";
-      }
+    if (auth && auth.milenage && auth.milenage.op && auth.milenage.op.opValue !== "") {
+      return "OP";
     }
-    return "";
+    return "OPc";
   };
 
   const operationCodeValue = (auth: AuthenticationSubscription | undefined) => {
-    if (auth !== undefined) {
-      if (
-        auth.milenage !== undefined &&
-        auth.milenage.op !== undefined &&
-        auth.milenage.op.opValue !== ""
-      ) {
+    if (auth) {
+      if (auth.milenage?.op?.opValue) {
         return auth.milenage.op.opValue;
       }
-      if (auth.opc !== undefined && auth.opc.opcValue !== "") {
+      if (auth.opc?.opcValue) {
         return auth.opc.opcValue;
       }
     }
@@ -132,16 +104,14 @@ export default function SubscriberRead() {
 
   const flowRule = (dnn: string, snssai: Nssai) => {
     const flowKey = toHex(snssai.sst) + snssai.sd;
-    if (data?.FlowRules === undefined) {
-      return <div></div>;
-    }
-    return data.FlowRules.filter((flow) => flow.dnn === dnn && flow.snssai === flowKey).map(
+    const rules = data?.FlowRules ?? [];
+    return rules.filter((flow) => flow && flow.dnn === dnn && flow.snssai === flowKey).map(
       (flow) => (
         <FlowRule
           key={flow.snssai}
           flow={flow}
           dnn={dnn}
-          data={data}
+          data={data!}
           chargingConfig={() => chargingConfig(dnn, snssai, flow.filter)}
         />
       ),

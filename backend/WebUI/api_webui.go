@@ -25,8 +25,6 @@ import (
 	"github.com/free5gc/util/mongoapi"
 	"github.com/free5gc/webconsole/backend/logger"
 	"github.com/free5gc/webconsole/backend/webui_context"
-
-	"github.com/free5gc/webconsole/backend/ta"
 )
 
 const (
@@ -842,9 +840,22 @@ func GetSubscribers(c *gin.Context) {
 
 	isAdmin := CheckAuth(c)
 
+	// 1. Query Trust Anchor for subscribers
+	taSubsList, taErr := TaListAllSubscribersIE()
+	if taErr == nil && len(taSubsList) > 0 {
+		logger.ProcLog.Infof("[GetSubscribers] Found %d subscribers in Trust Anchor", len(taSubsList))
+		c.JSON(http.StatusOK, taSubsList)
+		return
+	}
+
 	subsList := make([]SubsListIE, 0)
+	// [MONGO REMOVED] Querying MongoDB as fallback
 	amDataList, err := mongoapi.RestfulAPIGetMany(amDataColl, bson.M{})
 	if err != nil {
+		if taErr == nil {
+			c.JSON(http.StatusOK, subsList)
+			return
+		}
 		logger.ProcLog.Errorf("GetSubscribers err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
@@ -903,9 +914,17 @@ func GetSubscriberByID(c *gin.Context) {
 		})
 		return
 	}
+	// 1. Query Trust Anchor for subscriber
+	if taSubsData, err := TaGetSubscriber(ueId, servingPlmnId); err == nil && taSubsData != nil {
+		logger.ProcLog.Infof("[GetSubscriberByID] Found subscriber %s in Trust Anchor", ueId)
+		c.JSON(http.StatusOK, taSubsData)
+		return
+	}
+
 	filterUeIdOnly := bson.M{"ueId": ueId}
 	filter := bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId}
 
+	// [MONGO REMOVED] Fallback to MongoDB
 	authSubsDataInterface, err := mongoapi.RestfulAPIGetOne(authWebSubsDataColl, filterUeIdOnly)
 	if err != nil {
 		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
@@ -1322,6 +1341,9 @@ func dbOperation(
 				logger.ProcLog.Errorf("DeleteMultipleIdnetityDatas err: %+v", err)
 			}
 		} else {
+			if err := TaDeleteSubscriber(ueId); err != nil {
+				logger.ProcLog.Errorf("[dbOperation] TaDeleteSubscriber err: %v", err)
+			}
 			if err := mongoapi.RestfulAPIDeleteOne(authSubsDataColl, filterUeIdOnly); err != nil {
 				logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
 			}
@@ -1504,18 +1526,19 @@ func dbOperation(
 			}
 		}
 
+		// 1. Primary write to Trust Anchor under subscriber's dedicated Owner ID
+		if subsData != nil {
+			if err := TaSaveSubscriber(ueId, servingPlmnId, subsData); err != nil {
+				logger.ProcLog.Errorf("[dbOperation] TaSaveSubscriber err: %v", err)
+			}
+		}
+
+		// [MONGO REMOVED] Optional dual-write to MongoDB
 		if _, err := mongoapi.RestfulAPIPutOne(authWebSubsDataColl, filterUeIdOnly, webAuthSubsBsonM); err != nil {
 			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
 		}
 		if _, err := mongoapi.RestfulAPIPutOne(authSubsDataColl, filterUeIdOnly, authSubsBsonM); err != nil {
 			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
-		} else {
-			key := ta.TaExtractfromFilter(filterUeIdOnly)
-			go func() {
-				if taErr := ta.TaWrite(authSubsDataColl, key, authSubsBsonM); taErr != nil {
-					logger.ProcLog.Errorf("Mirror to TA failed: %v", taErr)
-				}
-			}()
 		}
 		if _, err := mongoapi.RestfulAPIPutOne(amDataColl, filter, amDataBsonM); err != nil {
 			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
@@ -1661,6 +1684,11 @@ func PatchSubscriberByID(c *gin.Context) {
 		logger.ProcLog.Errorf("PatchSubscriberByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
+	}
+
+	// Update Trust Anchor with patched subscriber data
+	if err := TaSaveSubscriber(supi, servingPlmnId, &subsData); err != nil {
+		logger.ProcLog.Errorf("[PatchSubscriberByID] TaSaveSubscriber err: %v", err)
 	}
 
 	c.Status(http.StatusNoContent)

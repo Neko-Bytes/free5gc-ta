@@ -12,8 +12,6 @@ import (
 	"github.com/free5gc/webconsole/backend/factory"
 	"github.com/free5gc/webconsole/backend/logger"
 	"github.com/free5gc/webconsole/backend/webui_service"
-
-	"github.com/free5gc/webconsole/backend/ta"
 )
 
 // File system constants
@@ -70,11 +68,6 @@ func action(cliCtx *cli.Context) error {
 		return err
 	}
 	WEBUI = webui
-
-	// Initialize Trust Anchor client connection
-	if err := ta.TaInit("localhost:9000"); err != nil {
-		logger.InitLog.Warnf("Trust Anchor initialisation warning: %v", err)
-	}
 
 	webui.Start(tlsKeyLogPath)
 

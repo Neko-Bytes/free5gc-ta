@@ -19,6 +19,7 @@ import (
 	"github.com/free5gc/webconsole/backend/billing"
 	"github.com/free5gc/webconsole/backend/factory"
 	"github.com/free5gc/webconsole/backend/logger"
+	"github.com/free5gc/webconsole/backend/ta"
 	"github.com/free5gc/webconsole/backend/webui_context"
 )
 
@@ -99,6 +100,24 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 	if err := mongoapi.SetMongoDB(mongodb.Name, mongodb.Url); err != nil {
 		logger.InitLog.Errorf("Server start err: %+v", err)
 		return
+	}
+
+	// Connect to Trust Anchor
+	taAddr := "127.0.0.1:9000"
+	if factory.WebuiConfig.Configuration.TrustAnchor != nil && factory.WebuiConfig.Configuration.TrustAnchor.Addr != "" {
+		taAddr = factory.WebuiConfig.Configuration.TrustAnchor.Addr
+	}
+	if err := ta.TaInit(taAddr); err != nil {
+		logger.InitLog.Errorf("Trust Anchor initialization failed: %v. Starting background reconnection...", err)
+		go func() {
+			for {
+				time.Sleep(3 * time.Second)
+				if err := ta.TaInit(taAddr); err == nil {
+					logger.InitLog.Infof("Trust Anchor reconnected successfully in background!")
+					break
+				}
+			}
+		}()
 	}
 
 	logger.InitLog.Infoln("Server started")

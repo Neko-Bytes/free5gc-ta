@@ -49,11 +49,16 @@ type Info struct {
 }
 
 type Configuration struct {
-	NfInstanceId  string         `yaml:"nfInstanceId,omitempty" valid:"optional,uuidv4"`
-	WebServer     *WebServer     `yaml:"webServer,omitempty" valid:"optional"`
-	Mongodb       *Mongodb       `yaml:"mongodb" valid:"required"`
-	NrfUri        string         `yaml:"nrfUri" valid:"required"`
-	BillingServer *BillingServer `yaml:"billingServer,omitempty" valid:"required"`
+	NfInstanceId  string              `yaml:"nfInstanceId,omitempty" valid:"optional,uuidv4"`
+	WebServer     *WebServer          `yaml:"webServer,omitempty" valid:"optional"`
+	Mongodb       *Mongodb            `yaml:"mongodb,omitempty" valid:"optional"`
+	TrustAnchor   *TrustAnchorConfig  `yaml:"trustAnchor,omitempty" valid:"optional"`
+	NrfUri        string              `yaml:"nrfUri" valid:"required"`
+	BillingServer *BillingServer      `yaml:"billingServer,omitempty" valid:"required"`
+}
+
+type TrustAnchorConfig struct {
+	Addr string `yaml:"addr" valid:"optional"`
 }
 
 func (c *Configuration) validate() (bool, error) {

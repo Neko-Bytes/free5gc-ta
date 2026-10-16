@@ -19,43 +19,110 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TrustAnchor_Write_FullMethodName          = "/trust_anchor.TrustAnchor/write"
-	TrustAnchor_Read_FullMethodName           = "/trust_anchor.TrustAnchor/read"
-	TrustAnchor_AddOwner_FullMethodName       = "/trust_anchor.TrustAnchor/add_owner"
-	TrustAnchor_UpdateTrustVec_FullMethodName = "/trust_anchor.TrustAnchor/update_trust_vec"
-	TrustAnchor_SetConfig_FullMethodName      = "/trust_anchor.TrustAnchor/set_config"
-	TrustAnchor_GetMap_FullMethodName         = "/trust_anchor.TrustAnchor/get_map"
-	TrustAnchor_GetCategory_FullMethodName    = "/trust_anchor.TrustAnchor/get_category"
-	TrustAnchor_GetHistory_FullMethodName     = "/trust_anchor.TrustAnchor/get_history"
-	TrustAnchor_GetOtherIds_FullMethodName    = "/trust_anchor.TrustAnchor/get_other_ids"
+	TrustAnchor_AddOwner_FullMethodName              = "/trust_anchor.TrustAnchor/add_owner"
+	TrustAnchor_Write_FullMethodName                 = "/trust_anchor.TrustAnchor/write"
+	TrustAnchor_Read_FullMethodName                  = "/trust_anchor.TrustAnchor/read"
+	TrustAnchor_UpdateTrustVec_FullMethodName        = "/trust_anchor.TrustAnchor/update_trust_vec"
+	TrustAnchor_SetConfig_FullMethodName             = "/trust_anchor.TrustAnchor/set_config"
+	TrustAnchor_GetMap_FullMethodName                = "/trust_anchor.TrustAnchor/get_map"
+	TrustAnchor_GetCategory_FullMethodName           = "/trust_anchor.TrustAnchor/get_category"
+	TrustAnchor_GetHistory_FullMethodName            = "/trust_anchor.TrustAnchor/get_history"
+	TrustAnchor_GetOtherIds_FullMethodName           = "/trust_anchor.TrustAnchor/get_other_ids"
+	TrustAnchor_GetTaId_FullMethodName               = "/trust_anchor.TrustAnchor/get_ta_id"
+	TrustAnchor_SubscribeLinkUpdates_FullMethodName  = "/trust_anchor.TrustAnchor/subscribe_link_updates"
+	TrustAnchor_RemoteTaPairing_FullMethodName       = "/trust_anchor.TrustAnchor/remote_ta_pairing"
+	TrustAnchor_RemoteRead_FullMethodName            = "/trust_anchor.TrustAnchor/remote_read"
+	TrustAnchor_RemoteWrite_FullMethodName           = "/trust_anchor.TrustAnchor/remote_write"
+	TrustAnchor_RemoteAddLinkIndex_FullMethodName    = "/trust_anchor.TrustAnchor/remote_add_link_index"
+	TrustAnchor_RemoteRemoveLinkIndex_FullMethodName = "/trust_anchor.TrustAnchor/remote_remove_link_index"
+	TrustAnchor_RemoteLinkIndexBatch_FullMethodName  = "/trust_anchor.TrustAnchor/remote_link_index_batch"
 )
 
 // TrustAnchorClient is the client API for TrustAnchor service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-//
-// gRPC services. First, call add_owner to receive a client ID (uint64). After that, all gRPC requests should include the client id as binary metadata in big-endian in the field 'id-bin'.
-// There is no authentication in this implementation, you can in fact switch clients by using their ID.
-// Data categories are currently identified by a single byte.
 type TrustAnchorClient interface {
-	// write to a category kv-space you have access to
-	Write(ctx context.Context, in *Write, opts ...grpc.CallOption) (*Empty, error)
-	// read from a category kv-space
-	Read(ctx context.Context, in *Read, opts ...grpc.CallOption) (*ReadResponse, error)
-	// register new client and receive a client ID
+	// Registers a new owner and returns its owner ID and the TA ID. Does not require
+	// 'id-bin'. The new owner gets its system category 0.
+	// If the TA is configured with an admin owner, the new owner additionally gets the
+	// configured admin data categories, whose decision functions grant access to the admin,
+	// and an initial trust vector towards the admin.
 	AddOwner(ctx context.Context, in *AddOwner, opts ...grpc.CallOption) (*AddOwnerResponse, error)
-	// submit vector of deltas to the trust vector you have for another client. if this is the first call, the trust vector starts with all zeros
+	// Writes a value to a key in a data category.
+	//   - Own category (Location = your own address): always allowed. The first write to a
+	//     category creates it with an all-zero decision function (no one else has access).
+	//   - Another owner's category: only allowed if you hold a link to it, otherwise an
+	//     error is returned.
+	//   - If Location.ta_id names a paired remote TA, the request is forwarded there.
+	//     An unknown ta_id results in NOT_FOUND.
+	//
+	// Every write is recorded in the audit log.
+	Write(ctx context.Context, in *Write, opts ...grpc.CallOption) (*Empty, error)
+	// Reads the value of a key in a data category. Location semantics are the same as for
+	// write (own category, linked category or forwarded to a remote TA).
+	// Without access (no link) the read fails with PERMISSION_DENIED; a key that does not
+	// exist in an accessible category returns an empty value. Set include_proof to also receive an audit log inclusion proof for the
+	// current value.
+	Read(ctx context.Context, in *Read, opts ...grpc.CallOption) (*ReadResponse, error)
+	// Applies a delta to your trust vector towards another owner (the trustee).
+	// The first update for a trustee starts from an all-zero vector. Each delta entry is
+	// clamped to [-128, 127], the resulting vector entries saturate at [0, 255]. Missing
+	// dimensions are treated as 0, dimensions beyond 32 are ignored.
+	// The trustee must be a registered local owner or an owner of a paired remote TA.
+	// Afterwards, all decision functions of your categories are re-evaluated for this
+	// trustee and links are added/removed accordingly. The links are changed asynchronously
+	// after the response; a remote trustee's TA is informed after the link has changed here.
 	UpdateTrustVec(ctx context.Context, in *UpdateTrustVec, opts ...grpc.CallOption) (*Empty, error)
-	// submit configurations for data categories. If the scalar product of your trust vector towards another client and a category's config vector is higher than a threshold (currently hardcoded, 40), that client has access to your category
+	// Sets the decision functions of one or more of your data categories.
+	// The category must already exist (write to it first), otherwise FAILED_PRECONDITION
+	// is returned. Category 0 is not allowed (INVALID_ARGUMENT).
+	// Afterwards, all your trustees are re-evaluated against the new decision function
+	// and links are added/removed accordingly.
 	SetConfig(ctx context.Context, in *SetConfig, opts ...grpc.CallOption) (*Empty, error)
-	// request general information on your data categories, peer clients and their access to your categories
+	// Returns an overview of your owner space: your own categories with the owners that
+	// have access to them, the categories of other owners you are linked to, and your
+	// trust vectors towards other owners.
 	GetMap(ctx context.Context, in *GetMap, opts ...grpc.CallOption) (*GetMapResponse, error)
-	// request all kv-pairs from a data category
+	// Returns all key-value pairs of a data category. Works for your own categories and
+	// for linked categories of other owners at the same TA (local only).
+	// Returns an empty list if the category does not exist or you have no access.
 	GetCategory(ctx context.Context, in *GetCategory, opts ...grpc.CallOption) (*GetCategoryResponse, error)
-	// get audit log information for a specific kv-pair
+	// Returns the audit log history of a key: one entry per version, starting with the
+	// current one and following the chain of previous versions back to the first write.
+	// Each entry includes an inclusion proof. Works for own and linked categories at the
+	// same TA (local only); Location.ta_id is ignored.
 	GetHistory(ctx context.Context, in *GetHistory, opts ...grpc.CallOption) (*History, error)
-	// get the current set of all client IDs
+	// Returns the addresses of all owners known to this TA except yourself. This includes
+	// local owners as well as owners of remote TAs that are represented locally (e.g.
+	// because a local owner has a trust vector towards them).
 	GetOtherIds(ctx context.Context, in *GetOtherIds, opts ...grpc.CallOption) (*GetOtherIdsResponse, error)
+	// Returns the global ID of this TA. Does not require 'id-bin'.
+	GetTaId(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*TaId, error)
+	// Opens a server stream of notifications whenever another owner grants you access to
+	// one of their categories (link added) or revokes it (link removed). Only events that
+	// occur while the stream is open are delivered. Links granted by owners of paired TAs are
+	// notified as well, once the owner's TA has changed the link and informed this TA.
+	SubscribeLinkUpdates(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LinkUpdateNotification], error)
+	// Pairs the calling TA with this TA (see above). Does not require 'id-bin'.
+	RemoteTaPairing(ctx context.Context, in *TaPair, opts ...grpc.CallOption) (*TaPairResponse, error)
+	// Executes a read on behalf of a client of the calling TA. Access is checked for the
+	// client's address (calling TA's ta_id, RemoteRead.owner_id).
+	RemoteRead(ctx context.Context, in *RemoteRead, opts ...grpc.CallOption) (*ReadResponse, error)
+	// Executes a write on behalf of a client of the calling TA. Access is checked for the
+	// client's address (calling TA's ta_id, RemoteWrite.owner_id).
+	RemoteWrite(ctx context.Context, in *RemoteWrite, opts ...grpc.CallOption) (*Empty, error)
+	// Informs this TA that an owner of the calling TA (trustor) granted a local owner of
+	// this TA (trustee) access to one of its categories, after the link was added there.
+	// Only the link index is stored here, the data stays at the trustor's TA. The trustee's
+	// subscription (subscribe_link_updates) is notified.
+	RemoteAddLinkIndex(ctx context.Context, in *RemoteAddLink, opts ...grpc.CallOption) (*Empty, error)
+	// Informs this TA that a previously granted remote link has been revoked (after it was
+	// removed at the trustor's TA). The trustee's subscription is notified.
+	RemoteRemoveLinkIndex(ctx context.Context, in *RemoteRemoveLink, opts ...grpc.CallOption) (*Empty, error)
+	// Batch form of remote_add_link_index / remote_remove_link_index, used by the TAs: the
+	// changes are applied in the given order. Changes for unknown trustees or without category
+	// are skipped (logged); the others are still applied.
+	RemoteLinkIndexBatch(ctx context.Context, in *RemoteLinkIndexBatch, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type trustAnchorClient struct {
@@ -64,6 +131,16 @@ type trustAnchorClient struct {
 
 func NewTrustAnchorClient(cc grpc.ClientConnInterface) TrustAnchorClient {
 	return &trustAnchorClient{cc}
+}
+
+func (c *trustAnchorClient) AddOwner(ctx context.Context, in *AddOwner, opts ...grpc.CallOption) (*AddOwnerResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AddOwnerResponse)
+	err := c.cc.Invoke(ctx, TrustAnchor_AddOwner_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *trustAnchorClient) Write(ctx context.Context, in *Write, opts ...grpc.CallOption) (*Empty, error) {
@@ -80,16 +157,6 @@ func (c *trustAnchorClient) Read(ctx context.Context, in *Read, opts ...grpc.Cal
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ReadResponse)
 	err := c.cc.Invoke(ctx, TrustAnchor_Read_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *trustAnchorClient) AddOwner(ctx context.Context, in *AddOwner, opts ...grpc.CallOption) (*AddOwnerResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(AddOwnerResponse)
-	err := c.cc.Invoke(ctx, TrustAnchor_AddOwner_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -156,32 +223,180 @@ func (c *trustAnchorClient) GetOtherIds(ctx context.Context, in *GetOtherIds, op
 	return out, nil
 }
 
+func (c *trustAnchorClient) GetTaId(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*TaId, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TaId)
+	err := c.cc.Invoke(ctx, TrustAnchor_GetTaId_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *trustAnchorClient) SubscribeLinkUpdates(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LinkUpdateNotification], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &TrustAnchor_ServiceDesc.Streams[0], TrustAnchor_SubscribeLinkUpdates_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[Empty, LinkUpdateNotification]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type TrustAnchor_SubscribeLinkUpdatesClient = grpc.ServerStreamingClient[LinkUpdateNotification]
+
+func (c *trustAnchorClient) RemoteTaPairing(ctx context.Context, in *TaPair, opts ...grpc.CallOption) (*TaPairResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TaPairResponse)
+	err := c.cc.Invoke(ctx, TrustAnchor_RemoteTaPairing_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *trustAnchorClient) RemoteRead(ctx context.Context, in *RemoteRead, opts ...grpc.CallOption) (*ReadResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReadResponse)
+	err := c.cc.Invoke(ctx, TrustAnchor_RemoteRead_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *trustAnchorClient) RemoteWrite(ctx context.Context, in *RemoteWrite, opts ...grpc.CallOption) (*Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, TrustAnchor_RemoteWrite_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *trustAnchorClient) RemoteAddLinkIndex(ctx context.Context, in *RemoteAddLink, opts ...grpc.CallOption) (*Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, TrustAnchor_RemoteAddLinkIndex_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *trustAnchorClient) RemoteRemoveLinkIndex(ctx context.Context, in *RemoteRemoveLink, opts ...grpc.CallOption) (*Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, TrustAnchor_RemoteRemoveLinkIndex_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *trustAnchorClient) RemoteLinkIndexBatch(ctx context.Context, in *RemoteLinkIndexBatch, opts ...grpc.CallOption) (*Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, TrustAnchor_RemoteLinkIndexBatch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TrustAnchorServer is the server API for TrustAnchor service.
 // All implementations must embed UnimplementedTrustAnchorServer
 // for forward compatibility.
-//
-// gRPC services. First, call add_owner to receive a client ID (uint64). After that, all gRPC requests should include the client id as binary metadata in big-endian in the field 'id-bin'.
-// There is no authentication in this implementation, you can in fact switch clients by using their ID.
-// Data categories are currently identified by a single byte.
 type TrustAnchorServer interface {
-	// write to a category kv-space you have access to
-	Write(context.Context, *Write) (*Empty, error)
-	// read from a category kv-space
-	Read(context.Context, *Read) (*ReadResponse, error)
-	// register new client and receive a client ID
+	// Registers a new owner and returns its owner ID and the TA ID. Does not require
+	// 'id-bin'. The new owner gets its system category 0.
+	// If the TA is configured with an admin owner, the new owner additionally gets the
+	// configured admin data categories, whose decision functions grant access to the admin,
+	// and an initial trust vector towards the admin.
 	AddOwner(context.Context, *AddOwner) (*AddOwnerResponse, error)
-	// submit vector of deltas to the trust vector you have for another client. if this is the first call, the trust vector starts with all zeros
+	// Writes a value to a key in a data category.
+	//   - Own category (Location = your own address): always allowed. The first write to a
+	//     category creates it with an all-zero decision function (no one else has access).
+	//   - Another owner's category: only allowed if you hold a link to it, otherwise an
+	//     error is returned.
+	//   - If Location.ta_id names a paired remote TA, the request is forwarded there.
+	//     An unknown ta_id results in NOT_FOUND.
+	//
+	// Every write is recorded in the audit log.
+	Write(context.Context, *Write) (*Empty, error)
+	// Reads the value of a key in a data category. Location semantics are the same as for
+	// write (own category, linked category or forwarded to a remote TA).
+	// Without access (no link) the read fails with PERMISSION_DENIED; a key that does not
+	// exist in an accessible category returns an empty value. Set include_proof to also receive an audit log inclusion proof for the
+	// current value.
+	Read(context.Context, *Read) (*ReadResponse, error)
+	// Applies a delta to your trust vector towards another owner (the trustee).
+	// The first update for a trustee starts from an all-zero vector. Each delta entry is
+	// clamped to [-128, 127], the resulting vector entries saturate at [0, 255]. Missing
+	// dimensions are treated as 0, dimensions beyond 32 are ignored.
+	// The trustee must be a registered local owner or an owner of a paired remote TA.
+	// Afterwards, all decision functions of your categories are re-evaluated for this
+	// trustee and links are added/removed accordingly. The links are changed asynchronously
+	// after the response; a remote trustee's TA is informed after the link has changed here.
 	UpdateTrustVec(context.Context, *UpdateTrustVec) (*Empty, error)
-	// submit configurations for data categories. If the scalar product of your trust vector towards another client and a category's config vector is higher than a threshold (currently hardcoded, 40), that client has access to your category
+	// Sets the decision functions of one or more of your data categories.
+	// The category must already exist (write to it first), otherwise FAILED_PRECONDITION
+	// is returned. Category 0 is not allowed (INVALID_ARGUMENT).
+	// Afterwards, all your trustees are re-evaluated against the new decision function
+	// and links are added/removed accordingly.
 	SetConfig(context.Context, *SetConfig) (*Empty, error)
-	// request general information on your data categories, peer clients and their access to your categories
+	// Returns an overview of your owner space: your own categories with the owners that
+	// have access to them, the categories of other owners you are linked to, and your
+	// trust vectors towards other owners.
 	GetMap(context.Context, *GetMap) (*GetMapResponse, error)
-	// request all kv-pairs from a data category
+	// Returns all key-value pairs of a data category. Works for your own categories and
+	// for linked categories of other owners at the same TA (local only).
+	// Returns an empty list if the category does not exist or you have no access.
 	GetCategory(context.Context, *GetCategory) (*GetCategoryResponse, error)
-	// get audit log information for a specific kv-pair
+	// Returns the audit log history of a key: one entry per version, starting with the
+	// current one and following the chain of previous versions back to the first write.
+	// Each entry includes an inclusion proof. Works for own and linked categories at the
+	// same TA (local only); Location.ta_id is ignored.
 	GetHistory(context.Context, *GetHistory) (*History, error)
-	// get the current set of all client IDs
+	// Returns the addresses of all owners known to this TA except yourself. This includes
+	// local owners as well as owners of remote TAs that are represented locally (e.g.
+	// because a local owner has a trust vector towards them).
 	GetOtherIds(context.Context, *GetOtherIds) (*GetOtherIdsResponse, error)
+	// Returns the global ID of this TA. Does not require 'id-bin'.
+	GetTaId(context.Context, *Empty) (*TaId, error)
+	// Opens a server stream of notifications whenever another owner grants you access to
+	// one of their categories (link added) or revokes it (link removed). Only events that
+	// occur while the stream is open are delivered. Links granted by owners of paired TAs are
+	// notified as well, once the owner's TA has changed the link and informed this TA.
+	SubscribeLinkUpdates(*Empty, grpc.ServerStreamingServer[LinkUpdateNotification]) error
+	// Pairs the calling TA with this TA (see above). Does not require 'id-bin'.
+	RemoteTaPairing(context.Context, *TaPair) (*TaPairResponse, error)
+	// Executes a read on behalf of a client of the calling TA. Access is checked for the
+	// client's address (calling TA's ta_id, RemoteRead.owner_id).
+	RemoteRead(context.Context, *RemoteRead) (*ReadResponse, error)
+	// Executes a write on behalf of a client of the calling TA. Access is checked for the
+	// client's address (calling TA's ta_id, RemoteWrite.owner_id).
+	RemoteWrite(context.Context, *RemoteWrite) (*Empty, error)
+	// Informs this TA that an owner of the calling TA (trustor) granted a local owner of
+	// this TA (trustee) access to one of its categories, after the link was added there.
+	// Only the link index is stored here, the data stays at the trustor's TA. The trustee's
+	// subscription (subscribe_link_updates) is notified.
+	RemoteAddLinkIndex(context.Context, *RemoteAddLink) (*Empty, error)
+	// Informs this TA that a previously granted remote link has been revoked (after it was
+	// removed at the trustor's TA). The trustee's subscription is notified.
+	RemoteRemoveLinkIndex(context.Context, *RemoteRemoveLink) (*Empty, error)
+	// Batch form of remote_add_link_index / remote_remove_link_index, used by the TAs: the
+	// changes are applied in the given order. Changes for unknown trustees or without category
+	// are skipped (logged); the others are still applied.
+	RemoteLinkIndexBatch(context.Context, *RemoteLinkIndexBatch) (*Empty, error)
 	mustEmbedUnimplementedTrustAnchorServer()
 }
 
@@ -192,14 +407,14 @@ type TrustAnchorServer interface {
 // pointer dereference when methods are called.
 type UnimplementedTrustAnchorServer struct{}
 
+func (UnimplementedTrustAnchorServer) AddOwner(context.Context, *AddOwner) (*AddOwnerResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AddOwner not implemented")
+}
 func (UnimplementedTrustAnchorServer) Write(context.Context, *Write) (*Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method Write not implemented")
 }
 func (UnimplementedTrustAnchorServer) Read(context.Context, *Read) (*ReadResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Read not implemented")
-}
-func (UnimplementedTrustAnchorServer) AddOwner(context.Context, *AddOwner) (*AddOwnerResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method AddOwner not implemented")
 }
 func (UnimplementedTrustAnchorServer) UpdateTrustVec(context.Context, *UpdateTrustVec) (*Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateTrustVec not implemented")
@@ -218,6 +433,30 @@ func (UnimplementedTrustAnchorServer) GetHistory(context.Context, *GetHistory) (
 }
 func (UnimplementedTrustAnchorServer) GetOtherIds(context.Context, *GetOtherIds) (*GetOtherIdsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetOtherIds not implemented")
+}
+func (UnimplementedTrustAnchorServer) GetTaId(context.Context, *Empty) (*TaId, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTaId not implemented")
+}
+func (UnimplementedTrustAnchorServer) SubscribeLinkUpdates(*Empty, grpc.ServerStreamingServer[LinkUpdateNotification]) error {
+	return status.Error(codes.Unimplemented, "method SubscribeLinkUpdates not implemented")
+}
+func (UnimplementedTrustAnchorServer) RemoteTaPairing(context.Context, *TaPair) (*TaPairResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemoteTaPairing not implemented")
+}
+func (UnimplementedTrustAnchorServer) RemoteRead(context.Context, *RemoteRead) (*ReadResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemoteRead not implemented")
+}
+func (UnimplementedTrustAnchorServer) RemoteWrite(context.Context, *RemoteWrite) (*Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemoteWrite not implemented")
+}
+func (UnimplementedTrustAnchorServer) RemoteAddLinkIndex(context.Context, *RemoteAddLink) (*Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemoteAddLinkIndex not implemented")
+}
+func (UnimplementedTrustAnchorServer) RemoteRemoveLinkIndex(context.Context, *RemoteRemoveLink) (*Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemoteRemoveLinkIndex not implemented")
+}
+func (UnimplementedTrustAnchorServer) RemoteLinkIndexBatch(context.Context, *RemoteLinkIndexBatch) (*Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemoteLinkIndexBatch not implemented")
 }
 func (UnimplementedTrustAnchorServer) mustEmbedUnimplementedTrustAnchorServer() {}
 func (UnimplementedTrustAnchorServer) testEmbeddedByValue()                     {}
@@ -238,6 +477,24 @@ func RegisterTrustAnchorServer(s grpc.ServiceRegistrar, srv TrustAnchorServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&TrustAnchor_ServiceDesc, srv)
+}
+
+func _TrustAnchor_AddOwner_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddOwner)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrustAnchorServer).AddOwner(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrustAnchor_AddOwner_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrustAnchorServer).AddOwner(ctx, req.(*AddOwner))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _TrustAnchor_Write_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -272,24 +529,6 @@ func _TrustAnchor_Read_Handler(srv interface{}, ctx context.Context, dec func(in
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TrustAnchorServer).Read(ctx, req.(*Read))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _TrustAnchor_AddOwner_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddOwner)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TrustAnchorServer).AddOwner(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: TrustAnchor_AddOwner_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TrustAnchorServer).AddOwner(ctx, req.(*AddOwner))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -402,6 +641,143 @@ func _TrustAnchor_GetOtherIds_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TrustAnchor_GetTaId_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrustAnchorServer).GetTaId(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrustAnchor_GetTaId_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrustAnchorServer).GetTaId(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TrustAnchor_SubscribeLinkUpdates_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(TrustAnchorServer).SubscribeLinkUpdates(m, &grpc.GenericServerStream[Empty, LinkUpdateNotification]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type TrustAnchor_SubscribeLinkUpdatesServer = grpc.ServerStreamingServer[LinkUpdateNotification]
+
+func _TrustAnchor_RemoteTaPairing_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TaPair)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrustAnchorServer).RemoteTaPairing(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrustAnchor_RemoteTaPairing_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrustAnchorServer).RemoteTaPairing(ctx, req.(*TaPair))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TrustAnchor_RemoteRead_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoteRead)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrustAnchorServer).RemoteRead(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrustAnchor_RemoteRead_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrustAnchorServer).RemoteRead(ctx, req.(*RemoteRead))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TrustAnchor_RemoteWrite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoteWrite)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrustAnchorServer).RemoteWrite(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrustAnchor_RemoteWrite_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrustAnchorServer).RemoteWrite(ctx, req.(*RemoteWrite))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TrustAnchor_RemoteAddLinkIndex_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoteAddLink)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrustAnchorServer).RemoteAddLinkIndex(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrustAnchor_RemoteAddLinkIndex_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrustAnchorServer).RemoteAddLinkIndex(ctx, req.(*RemoteAddLink))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TrustAnchor_RemoteRemoveLinkIndex_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoteRemoveLink)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrustAnchorServer).RemoteRemoveLinkIndex(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrustAnchor_RemoteRemoveLinkIndex_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrustAnchorServer).RemoteRemoveLinkIndex(ctx, req.(*RemoteRemoveLink))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TrustAnchor_RemoteLinkIndexBatch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoteLinkIndexBatch)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrustAnchorServer).RemoteLinkIndexBatch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrustAnchor_RemoteLinkIndexBatch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrustAnchorServer).RemoteLinkIndexBatch(ctx, req.(*RemoteLinkIndexBatch))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TrustAnchor_ServiceDesc is the grpc.ServiceDesc for TrustAnchor service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -410,16 +786,16 @@ var TrustAnchor_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*TrustAnchorServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "add_owner",
+			Handler:    _TrustAnchor_AddOwner_Handler,
+		},
+		{
 			MethodName: "write",
 			Handler:    _TrustAnchor_Write_Handler,
 		},
 		{
 			MethodName: "read",
 			Handler:    _TrustAnchor_Read_Handler,
-		},
-		{
-			MethodName: "add_owner",
-			Handler:    _TrustAnchor_AddOwner_Handler,
 		},
 		{
 			MethodName: "update_trust_vec",
@@ -445,7 +821,41 @@ var TrustAnchor_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "get_other_ids",
 			Handler:    _TrustAnchor_GetOtherIds_Handler,
 		},
+		{
+			MethodName: "get_ta_id",
+			Handler:    _TrustAnchor_GetTaId_Handler,
+		},
+		{
+			MethodName: "remote_ta_pairing",
+			Handler:    _TrustAnchor_RemoteTaPairing_Handler,
+		},
+		{
+			MethodName: "remote_read",
+			Handler:    _TrustAnchor_RemoteRead_Handler,
+		},
+		{
+			MethodName: "remote_write",
+			Handler:    _TrustAnchor_RemoteWrite_Handler,
+		},
+		{
+			MethodName: "remote_add_link_index",
+			Handler:    _TrustAnchor_RemoteAddLinkIndex_Handler,
+		},
+		{
+			MethodName: "remote_remove_link_index",
+			Handler:    _TrustAnchor_RemoteRemoveLinkIndex_Handler,
+		},
+		{
+			MethodName: "remote_link_index_batch",
+			Handler:    _TrustAnchor_RemoteLinkIndexBatch_Handler,
+		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "subscribe_link_updates",
+			Handler:       _TrustAnchor_SubscribeLinkUpdates_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "trust_anchor.proto",
 }

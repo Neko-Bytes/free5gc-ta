@@ -308,33 +308,41 @@ class SubscriptionMapperImpl implements SubscriptionMapper {
   }
 
   mapFromSubscription(subscription: Subscription): SubscriptionDTO {
+    const amData = subscription.AccessAndMobilitySubscriptionData;
+    const authData = subscription.AuthenticationSubscription;
+    const smDataList = subscription.SessionManagementSubscriptionData ?? [];
+
     return {
       userNumber: 1,
-      ueId: subscription.ueId,
-      plmnID: subscription.plmnID,
-      gpsi: subscription.AccessAndMobilitySubscriptionData.gpsis?.[0].slice(7) ?? "",
+      ueId: subscription.ueId ?? "",
+      plmnID: subscription.plmnID ?? "",
+      gpsi: amData?.gpsis?.[0] ? amData.gpsis[0].slice(7) : "",
       auth: {
         authenticationManagementField:
-          subscription.AuthenticationSubscription.authenticationManagementField ?? "",
-        authenticationMethod: subscription.AuthenticationSubscription.authenticationMethod,
-        sequenceNumber: subscription.AuthenticationSubscription.sequenceNumber,
-        permanentKey: subscription.AuthenticationSubscription.permanentKey.permanentKeyValue,
-        operatorCodeType: subscription.AuthenticationSubscription.milenage?.op?.opValue
+          authData?.authenticationManagementField ?? "",
+        authenticationMethod: authData?.authenticationMethod ?? "5G_AKA",
+        sequenceNumber: authData?.sequenceNumber ?? "000000000020",
+        permanentKey: authData?.permanentKey?.permanentKeyValue ?? "",
+        operatorCodeType: authData?.milenage?.op?.opValue
           ? "OP"
           : "OPc",
-        operatorCode: subscription.AuthenticationSubscription.milenage?.op?.opValue
-          ? subscription.AuthenticationSubscription.milenage.op.opValue
-          : subscription.AuthenticationSubscription.opc?.opcValue ?? "",
+        operatorCode: authData?.milenage?.op?.opValue
+          ? authData.milenage.op.opValue
+          : authData?.opc?.opcValue ?? "",
       },
       subscribedUeAmbr: {
-        uplink: subscription.AccessAndMobilitySubscriptionData.subscribedUeAmbr?.uplink ?? "",
-        downlink: subscription.AccessAndMobilitySubscriptionData.subscribedUeAmbr?.downlink ?? "",
+        uplink: amData?.subscribedUeAmbr?.uplink ?? "",
+        downlink: amData?.subscribedUeAmbr?.downlink ?? "",
       },
-      SnssaiConfigurations: subscription.SessionManagementSubscriptionData.map((s) => ({
-        sst: s.singleNssai.sst,
-        sd: s.singleNssai.sd ?? "",
-        isDefault: this.snssaiIsDefault(s.singleNssai, subscription),
-        chargingData: this.findSliceChargingData(s.singleNssai, subscription),
+      SnssaiConfigurations: smDataList.map((s) => ({
+        sst: s.singleNssai?.sst ?? 1,
+        sd: s.singleNssai?.sd ?? "",
+        isDefault: s.singleNssai ? this.snssaiIsDefault(s.singleNssai, subscription) : false,
+        chargingData: s.singleNssai ? this.findSliceChargingData(s.singleNssai, subscription) : {
+          chargingMethod: "Offline",
+          quota: "",
+          unitCost: "",
+        },
         dnnConfigurations: Object.fromEntries(
           Object.entries(s.dnnConfigurations ?? {}).map(([key, value]) => [
             key,
@@ -346,7 +354,7 @@ class SubscriptionMapperImpl implements SubscriptionMapper {
               },
               enableStaticIpv4Address: value.staticIpAddress?.length !== 0,
               staticIpv4Address: value.staticIpAddress?.[0]?.ipv4Addr ?? "",
-              flowRules: this.parseDnnFlowRules(s.singleNssai, key, subscription),
+              flowRules: s.singleNssai ? this.parseDnnFlowRules(s.singleNssai, key, subscription) : [],
               upSecurity: value.upSecurity,
             } satisfies DnnConfigurationDTO,
           ]),
@@ -357,15 +365,16 @@ class SubscriptionMapperImpl implements SubscriptionMapper {
 
   private snssaiIsDefault(nssai: Nssai, subscription: Subscription): boolean {
     return (
-      subscription.AccessAndMobilitySubscriptionData.nssai?.defaultSingleNssais?.some(
-        (n) => n.sst === nssai.sst && n.sd === nssai.sd,
+      subscription.AccessAndMobilitySubscriptionData?.nssai?.defaultSingleNssais?.some(
+        (n) => n && n.sst === nssai.sst && n.sd === nssai.sd,
       ) ?? false
     );
   }
 
   private findSliceChargingData(nssai: Nssai, subscription: Subscription): ChargingDataDTO {
-    const charingData = subscription.ChargingDatas.find((c) => {
-      if (c.dnn !== "" || c.filter !== "") {
+    const chargingDatas = subscription.ChargingDatas ?? [];
+    const charingData = chargingDatas.find((c) => {
+      if (!c || c.dnn !== "" || c.filter !== "") {
         return false;
       }
 
@@ -384,13 +393,17 @@ class SubscriptionMapperImpl implements SubscriptionMapper {
     dnn: string,
     subscription: Subscription,
   ): FlowRulesDTO[] {
-    const qosFlows = subscription.QosFlows.filter(
-      (f) => f.dnn === dnn && f.snssai === snssai.sst.toString().padStart(2, "0") + snssai.sd,
+    const qosFlows = subscription.QosFlows ?? [];
+    const flowRules = subscription.FlowRules ?? [];
+    const chargingDatas = subscription.ChargingDatas ?? [];
+
+    const matchedQosFlows = qosFlows.filter(
+      (f) => f && f.dnn === dnn && f.snssai === snssai.sst.toString().padStart(2, "0") + snssai.sd,
     );
 
-    return qosFlows.map((f) => {
-      const flowRule = subscription.FlowRules.find((r) => r.qosRef === f.qosRef);
-      const chargingData = subscription.ChargingDatas.find((c) => c.qosRef === f.qosRef);
+    return matchedQosFlows.map((f) => {
+      const flowRule = flowRules.find((r) => r && r.qosRef === f.qosRef);
+      const chargingData = chargingDatas.find((c) => c && c.qosRef === f.qosRef);
 
       return {
         filter: flowRule?.filter ?? "",
@@ -405,7 +418,7 @@ class SubscriptionMapperImpl implements SubscriptionMapper {
           quota: chargingData?.quota ?? "",
           unitCost: chargingData?.unitCost ?? "",
         },
-      }
+      };
     });
   }
 

@@ -21,441 +21,55 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// try to identify source of error
-type Status int32
+type LinkUpdate int32
 
 const (
-	Status_Ok Status = 0
-	// client side issues
-	Status_BadRequest Status = 1
-	// server side issues
-	Status_InternalError Status = 2
+	// A link was added: you can now access the category.
+	LinkUpdate_Added LinkUpdate = 0
+	// A link was removed: you can no longer access the category.
+	LinkUpdate_Removed LinkUpdate = 1
 )
 
-// Enum value maps for Status.
+// Enum value maps for LinkUpdate.
 var (
-	Status_name = map[int32]string{
-		0: "Ok",
-		1: "BadRequest",
-		2: "InternalError",
+	LinkUpdate_name = map[int32]string{
+		0: "Added",
+		1: "Removed",
 	}
-	Status_value = map[string]int32{
-		"Ok":            0,
-		"BadRequest":    1,
-		"InternalError": 2,
+	LinkUpdate_value = map[string]int32{
+		"Added":   0,
+		"Removed": 1,
 	}
 )
 
-func (x Status) Enum() *Status {
-	p := new(Status)
+func (x LinkUpdate) Enum() *LinkUpdate {
+	p := new(LinkUpdate)
 	*p = x
 	return p
 }
 
-func (x Status) String() string {
+func (x LinkUpdate) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (Status) Descriptor() protoreflect.EnumDescriptor {
+func (LinkUpdate) Descriptor() protoreflect.EnumDescriptor {
 	return file_trust_anchor_proto_enumTypes[0].Descriptor()
 }
 
-func (Status) Type() protoreflect.EnumType {
+func (LinkUpdate) Type() protoreflect.EnumType {
 	return &file_trust_anchor_proto_enumTypes[0]
 }
 
-func (x Status) Number() protoreflect.EnumNumber {
+func (x LinkUpdate) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use Status.Descriptor instead.
-func (Status) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use LinkUpdate.Descriptor instead.
+func (LinkUpdate) EnumDescriptor() ([]byte, []int) {
 	return file_trust_anchor_proto_rawDescGZIP(), []int{0}
 }
 
-// Request Type for DenKrement Calls to topic: TA/Procedures
-type TrustAnchorRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Types that are valid to be assigned to Request:
-	//
-	//	*TrustAnchorRequest_Write
-	//	*TrustAnchorRequest_Read
-	//	*TrustAnchorRequest_UpdateTrustVec
-	//	*TrustAnchorRequest_AddOwner
-	//	*TrustAnchorRequest_SetConfig
-	//	*TrustAnchorRequest_GetMap
-	//	*TrustAnchorRequest_GetCategory
-	//	*TrustAnchorRequest_GetHistory
-	//	*TrustAnchorRequest_GetOtherIds
-	Request       isTrustAnchorRequest_Request `protobuf_oneof:"request"`
-	SenderId      uint64                       `protobuf:"varint,1,opt,name=sender_id,json=senderId,proto3" json:"sender_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *TrustAnchorRequest) Reset() {
-	*x = TrustAnchorRequest{}
-	mi := &file_trust_anchor_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *TrustAnchorRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TrustAnchorRequest) ProtoMessage() {}
-
-func (x *TrustAnchorRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_trust_anchor_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TrustAnchorRequest.ProtoReflect.Descriptor instead.
-func (*TrustAnchorRequest) Descriptor() ([]byte, []int) {
-	return file_trust_anchor_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *TrustAnchorRequest) GetRequest() isTrustAnchorRequest_Request {
-	if x != nil {
-		return x.Request
-	}
-	return nil
-}
-
-func (x *TrustAnchorRequest) GetWrite() *Write {
-	if x != nil {
-		if x, ok := x.Request.(*TrustAnchorRequest_Write); ok {
-			return x.Write
-		}
-	}
-	return nil
-}
-
-func (x *TrustAnchorRequest) GetRead() *Read {
-	if x != nil {
-		if x, ok := x.Request.(*TrustAnchorRequest_Read); ok {
-			return x.Read
-		}
-	}
-	return nil
-}
-
-func (x *TrustAnchorRequest) GetUpdateTrustVec() *UpdateTrustVec {
-	if x != nil {
-		if x, ok := x.Request.(*TrustAnchorRequest_UpdateTrustVec); ok {
-			return x.UpdateTrustVec
-		}
-	}
-	return nil
-}
-
-func (x *TrustAnchorRequest) GetAddOwner() *AddOwner {
-	if x != nil {
-		if x, ok := x.Request.(*TrustAnchorRequest_AddOwner); ok {
-			return x.AddOwner
-		}
-	}
-	return nil
-}
-
-func (x *TrustAnchorRequest) GetSetConfig() *SetConfig {
-	if x != nil {
-		if x, ok := x.Request.(*TrustAnchorRequest_SetConfig); ok {
-			return x.SetConfig
-		}
-	}
-	return nil
-}
-
-func (x *TrustAnchorRequest) GetGetMap() *GetMap {
-	if x != nil {
-		if x, ok := x.Request.(*TrustAnchorRequest_GetMap); ok {
-			return x.GetMap
-		}
-	}
-	return nil
-}
-
-func (x *TrustAnchorRequest) GetGetCategory() *GetCategory {
-	if x != nil {
-		if x, ok := x.Request.(*TrustAnchorRequest_GetCategory); ok {
-			return x.GetCategory
-		}
-	}
-	return nil
-}
-
-func (x *TrustAnchorRequest) GetGetHistory() *GetHistory {
-	if x != nil {
-		if x, ok := x.Request.(*TrustAnchorRequest_GetHistory); ok {
-			return x.GetHistory
-		}
-	}
-	return nil
-}
-
-func (x *TrustAnchorRequest) GetGetOtherIds() *GetOtherIds {
-	if x != nil {
-		if x, ok := x.Request.(*TrustAnchorRequest_GetOtherIds); ok {
-			return x.GetOtherIds
-		}
-	}
-	return nil
-}
-
-func (x *TrustAnchorRequest) GetSenderId() uint64 {
-	if x != nil {
-		return x.SenderId
-	}
-	return 0
-}
-
-type isTrustAnchorRequest_Request interface {
-	isTrustAnchorRequest_Request()
-}
-
-type TrustAnchorRequest_Write struct {
-	Write *Write `protobuf:"bytes,2,opt,name=write,proto3,oneof"`
-}
-
-type TrustAnchorRequest_Read struct {
-	Read *Read `protobuf:"bytes,3,opt,name=read,proto3,oneof"`
-}
-
-type TrustAnchorRequest_UpdateTrustVec struct {
-	UpdateTrustVec *UpdateTrustVec `protobuf:"bytes,4,opt,name=update_trust_vec,json=updateTrustVec,proto3,oneof"`
-}
-
-type TrustAnchorRequest_AddOwner struct {
-	AddOwner *AddOwner `protobuf:"bytes,5,opt,name=add_owner,json=addOwner,proto3,oneof"`
-}
-
-type TrustAnchorRequest_SetConfig struct {
-	SetConfig *SetConfig `protobuf:"bytes,6,opt,name=set_config,json=setConfig,proto3,oneof"`
-}
-
-type TrustAnchorRequest_GetMap struct {
-	GetMap *GetMap `protobuf:"bytes,7,opt,name=get_map,json=getMap,proto3,oneof"`
-}
-
-type TrustAnchorRequest_GetCategory struct {
-	GetCategory *GetCategory `protobuf:"bytes,8,opt,name=get_category,json=getCategory,proto3,oneof"`
-}
-
-type TrustAnchorRequest_GetHistory struct {
-	GetHistory *GetHistory `protobuf:"bytes,9,opt,name=get_history,json=getHistory,proto3,oneof"`
-}
-
-type TrustAnchorRequest_GetOtherIds struct {
-	GetOtherIds *GetOtherIds `protobuf:"bytes,10,opt,name=get_other_ids,json=getOtherIds,proto3,oneof"`
-}
-
-func (*TrustAnchorRequest_Write) isTrustAnchorRequest_Request() {}
-
-func (*TrustAnchorRequest_Read) isTrustAnchorRequest_Request() {}
-
-func (*TrustAnchorRequest_UpdateTrustVec) isTrustAnchorRequest_Request() {}
-
-func (*TrustAnchorRequest_AddOwner) isTrustAnchorRequest_Request() {}
-
-func (*TrustAnchorRequest_SetConfig) isTrustAnchorRequest_Request() {}
-
-func (*TrustAnchorRequest_GetMap) isTrustAnchorRequest_Request() {}
-
-func (*TrustAnchorRequest_GetCategory) isTrustAnchorRequest_Request() {}
-
-func (*TrustAnchorRequest_GetHistory) isTrustAnchorRequest_Request() {}
-
-func (*TrustAnchorRequest_GetOtherIds) isTrustAnchorRequest_Request() {}
-
-// Response Type for DenKrement Calls to topic: TA/Procedures
-type TrustAnchorResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Types that are valid to be assigned to Response:
-	//
-	//	*TrustAnchorResponse_EmptyResponse
-	//	*TrustAnchorResponse_ReadResponse
-	//	*TrustAnchorResponse_AddOwnerResponse
-	//	*TrustAnchorResponse_GetMapResponse
-	//	*TrustAnchorResponse_GetCategoryResponse
-	//	*TrustAnchorResponse_GetHistoryResponse
-	//	*TrustAnchorResponse_GetOtherIdsResponse
-	Response        isTrustAnchorResponse_Response `protobuf_oneof:"response"`
-	Status          Status                         `protobuf:"varint,1,opt,name=status,proto3,enum=trust_anchor.Status" json:"status,omitempty"`
-	ExecutionTimeUs uint32                         `protobuf:"varint,2,opt,name=execution_time_us,json=executionTimeUs,proto3" json:"execution_time_us,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
-}
-
-func (x *TrustAnchorResponse) Reset() {
-	*x = TrustAnchorResponse{}
-	mi := &file_trust_anchor_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *TrustAnchorResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TrustAnchorResponse) ProtoMessage() {}
-
-func (x *TrustAnchorResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trust_anchor_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TrustAnchorResponse.ProtoReflect.Descriptor instead.
-func (*TrustAnchorResponse) Descriptor() ([]byte, []int) {
-	return file_trust_anchor_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *TrustAnchorResponse) GetResponse() isTrustAnchorResponse_Response {
-	if x != nil {
-		return x.Response
-	}
-	return nil
-}
-
-func (x *TrustAnchorResponse) GetEmptyResponse() *Empty {
-	if x != nil {
-		if x, ok := x.Response.(*TrustAnchorResponse_EmptyResponse); ok {
-			return x.EmptyResponse
-		}
-	}
-	return nil
-}
-
-func (x *TrustAnchorResponse) GetReadResponse() *ReadResponse {
-	if x != nil {
-		if x, ok := x.Response.(*TrustAnchorResponse_ReadResponse); ok {
-			return x.ReadResponse
-		}
-	}
-	return nil
-}
-
-func (x *TrustAnchorResponse) GetAddOwnerResponse() *AddOwnerResponse {
-	if x != nil {
-		if x, ok := x.Response.(*TrustAnchorResponse_AddOwnerResponse); ok {
-			return x.AddOwnerResponse
-		}
-	}
-	return nil
-}
-
-func (x *TrustAnchorResponse) GetGetMapResponse() *GetMapResponse {
-	if x != nil {
-		if x, ok := x.Response.(*TrustAnchorResponse_GetMapResponse); ok {
-			return x.GetMapResponse
-		}
-	}
-	return nil
-}
-
-func (x *TrustAnchorResponse) GetGetCategoryResponse() *GetCategoryResponse {
-	if x != nil {
-		if x, ok := x.Response.(*TrustAnchorResponse_GetCategoryResponse); ok {
-			return x.GetCategoryResponse
-		}
-	}
-	return nil
-}
-
-func (x *TrustAnchorResponse) GetGetHistoryResponse() *History {
-	if x != nil {
-		if x, ok := x.Response.(*TrustAnchorResponse_GetHistoryResponse); ok {
-			return x.GetHistoryResponse
-		}
-	}
-	return nil
-}
-
-func (x *TrustAnchorResponse) GetGetOtherIdsResponse() *GetOtherIdsResponse {
-	if x != nil {
-		if x, ok := x.Response.(*TrustAnchorResponse_GetOtherIdsResponse); ok {
-			return x.GetOtherIdsResponse
-		}
-	}
-	return nil
-}
-
-func (x *TrustAnchorResponse) GetStatus() Status {
-	if x != nil {
-		return x.Status
-	}
-	return Status_Ok
-}
-
-func (x *TrustAnchorResponse) GetExecutionTimeUs() uint32 {
-	if x != nil {
-		return x.ExecutionTimeUs
-	}
-	return 0
-}
-
-type isTrustAnchorResponse_Response interface {
-	isTrustAnchorResponse_Response()
-}
-
-type TrustAnchorResponse_EmptyResponse struct {
-	EmptyResponse *Empty `protobuf:"bytes,3,opt,name=empty_response,json=emptyResponse,proto3,oneof"`
-}
-
-type TrustAnchorResponse_ReadResponse struct {
-	ReadResponse *ReadResponse `protobuf:"bytes,4,opt,name=read_response,json=readResponse,proto3,oneof"`
-}
-
-type TrustAnchorResponse_AddOwnerResponse struct {
-	AddOwnerResponse *AddOwnerResponse `protobuf:"bytes,5,opt,name=add_owner_response,json=addOwnerResponse,proto3,oneof"`
-}
-
-type TrustAnchorResponse_GetMapResponse struct {
-	GetMapResponse *GetMapResponse `protobuf:"bytes,6,opt,name=get_map_response,json=getMapResponse,proto3,oneof"`
-}
-
-type TrustAnchorResponse_GetCategoryResponse struct {
-	GetCategoryResponse *GetCategoryResponse `protobuf:"bytes,7,opt,name=get_category_response,json=getCategoryResponse,proto3,oneof"`
-}
-
-type TrustAnchorResponse_GetHistoryResponse struct {
-	GetHistoryResponse *History `protobuf:"bytes,8,opt,name=get_history_response,json=getHistoryResponse,proto3,oneof"`
-}
-
-type TrustAnchorResponse_GetOtherIdsResponse struct {
-	GetOtherIdsResponse *GetOtherIdsResponse `protobuf:"bytes,9,opt,name=get_other_ids_response,json=getOtherIdsResponse,proto3,oneof"`
-}
-
-func (*TrustAnchorResponse_EmptyResponse) isTrustAnchorResponse_Response() {}
-
-func (*TrustAnchorResponse_ReadResponse) isTrustAnchorResponse_Response() {}
-
-func (*TrustAnchorResponse_AddOwnerResponse) isTrustAnchorResponse_Response() {}
-
-func (*TrustAnchorResponse_GetMapResponse) isTrustAnchorResponse_Response() {}
-
-func (*TrustAnchorResponse_GetCategoryResponse) isTrustAnchorResponse_Response() {}
-
-func (*TrustAnchorResponse_GetHistoryResponse) isTrustAnchorResponse_Response() {}
-
-func (*TrustAnchorResponse_GetOtherIdsResponse) isTrustAnchorResponse_Response() {}
-
-// little helper
+// Empty request / response.
 type Empty struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -464,7 +78,7 @@ type Empty struct {
 
 func (x *Empty) Reset() {
 	*x = Empty{}
-	mi := &file_trust_anchor_proto_msgTypes[2]
+	mi := &file_trust_anchor_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -476,7 +90,7 @@ func (x *Empty) String() string {
 func (*Empty) ProtoMessage() {}
 
 func (x *Empty) ProtoReflect() protoreflect.Message {
-	mi := &file_trust_anchor_proto_msgTypes[2]
+	mi := &file_trust_anchor_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -489,20 +103,26 @@ func (x *Empty) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Empty.ProtoReflect.Descriptor instead.
 func (*Empty) Descriptor() ([]byte, []int) {
-	return file_trust_anchor_proto_rawDescGZIP(), []int{2}
+	return file_trust_anchor_proto_rawDescGZIP(), []int{0}
 }
 
-// newly created ID of a new client, should b included in gRPC metadata for other requests
+// Response of add_owner.
 type AddOwnerResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OwnerId       uint64                 `protobuf:"varint,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The newly assigned owner ID. Put it into the 'id-bin' metadata (8 bytes, big-endian)
+	// of all further requests.
+	OwnerId uint64 `protobuf:"varint,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	// ID of the TA the owner was registered at. Together with owner_id this forms the
+	// owner's global address, and it has to be used as Location.ta_id when addressing
+	// your own (or other local owners') data.
+	TaId          string `protobuf:"bytes,2,opt,name=ta_id,json=taId,proto3" json:"ta_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *AddOwnerResponse) Reset() {
 	*x = AddOwnerResponse{}
-	mi := &file_trust_anchor_proto_msgTypes[3]
+	mi := &file_trust_anchor_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -514,7 +134,7 @@ func (x *AddOwnerResponse) String() string {
 func (*AddOwnerResponse) ProtoMessage() {}
 
 func (x *AddOwnerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trust_anchor_proto_msgTypes[3]
+	mi := &file_trust_anchor_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -527,7 +147,7 @@ func (x *AddOwnerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddOwnerResponse.ProtoReflect.Descriptor instead.
 func (*AddOwnerResponse) Descriptor() ([]byte, []int) {
-	return file_trust_anchor_proto_rawDescGZIP(), []int{3}
+	return file_trust_anchor_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *AddOwnerResponse) GetOwnerId() uint64 {
@@ -537,17 +157,27 @@ func (x *AddOwnerResponse) GetOwnerId() uint64 {
 	return 0
 }
 
+func (x *AddOwnerResponse) GetTaId() string {
+	if x != nil {
+		return x.TaId
+	}
+	return ""
+}
+
+// Request of write.
 type Write struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Location      *Location              `protobuf:"bytes,1,opt,name=location,proto3" json:"location,omitempty"`
-	Value         []byte                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Where to write: owner (incl. TA), category and key.
+	Location *Location `protobuf:"bytes,1,opt,name=location,proto3" json:"location,omitempty"`
+	// Value to store. Arbitrary bytes, interpreted by the clients only.
+	Value         []byte `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Write) Reset() {
 	*x = Write{}
-	mi := &file_trust_anchor_proto_msgTypes[4]
+	mi := &file_trust_anchor_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -559,7 +189,7 @@ func (x *Write) String() string {
 func (*Write) ProtoMessage() {}
 
 func (x *Write) ProtoReflect() protoreflect.Message {
-	mi := &file_trust_anchor_proto_msgTypes[4]
+	mi := &file_trust_anchor_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -572,7 +202,7 @@ func (x *Write) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Write.ProtoReflect.Descriptor instead.
 func (*Write) Descriptor() ([]byte, []int) {
-	return file_trust_anchor_proto_rawDescGZIP(), []int{4}
+	return file_trust_anchor_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Write) GetLocation() *Location {
@@ -589,10 +219,68 @@ func (x *Write) GetValue() []byte {
 	return nil
 }
 
+// Request of remote_write (inter-TA).
+type RemoteWrite struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The original write request of the client.
+	Request *Write `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
+	// The owner ID of the requesting client at its own TA (the calling TA).
+	OwnerId       uint64 `protobuf:"varint,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoteWrite) Reset() {
+	*x = RemoteWrite{}
+	mi := &file_trust_anchor_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoteWrite) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoteWrite) ProtoMessage() {}
+
+func (x *RemoteWrite) ProtoReflect() protoreflect.Message {
+	mi := &file_trust_anchor_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoteWrite.ProtoReflect.Descriptor instead.
+func (*RemoteWrite) Descriptor() ([]byte, []int) {
+	return file_trust_anchor_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *RemoteWrite) GetRequest() *Write {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
+func (x *RemoteWrite) GetOwnerId() uint64 {
+	if x != nil {
+		return x.OwnerId
+	}
+	return 0
+}
+
+// Request of read.
 type Read struct {
-	state    protoimpl.MessageState `protogen:"open.v1"`
-	Location *Location              `protobuf:"bytes,1,opt,name=location,proto3" json:"location,omitempty"`
-	// include 'inclusion proof' from audit log for current version of that kv entry in response
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Where to read from: owner (incl. TA), category and key.
+	Location *Location `protobuf:"bytes,1,opt,name=location,proto3" json:"location,omitempty"`
+	// If true, the response contains an audit log inclusion proof for the current
+	// version of the value.
 	IncludeProof  bool `protobuf:"varint,2,opt,name=include_proof,json=includeProof,proto3" json:"include_proof,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -600,7 +288,7 @@ type Read struct {
 
 func (x *Read) Reset() {
 	*x = Read{}
-	mi := &file_trust_anchor_proto_msgTypes[5]
+	mi := &file_trust_anchor_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -612,7 +300,7 @@ func (x *Read) String() string {
 func (*Read) ProtoMessage() {}
 
 func (x *Read) ProtoReflect() protoreflect.Message {
-	mi := &file_trust_anchor_proto_msgTypes[5]
+	mi := &file_trust_anchor_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -625,7 +313,7 @@ func (x *Read) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Read.ProtoReflect.Descriptor instead.
 func (*Read) Descriptor() ([]byte, []int) {
-	return file_trust_anchor_proto_rawDescGZIP(), []int{5}
+	return file_trust_anchor_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Read) GetLocation() *Location {
@@ -642,10 +330,68 @@ func (x *Read) GetIncludeProof() bool {
 	return false
 }
 
+// Request of remote_read (inter-TA).
+type RemoteRead struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The original read request of the client.
+	Request *Read `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
+	// The owner ID of the requesting client at its own TA (the calling TA).
+	OwnerId       uint64 `protobuf:"varint,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoteRead) Reset() {
+	*x = RemoteRead{}
+	mi := &file_trust_anchor_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoteRead) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoteRead) ProtoMessage() {}
+
+func (x *RemoteRead) ProtoReflect() protoreflect.Message {
+	mi := &file_trust_anchor_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoteRead.ProtoReflect.Descriptor instead.
+func (*RemoteRead) Descriptor() ([]byte, []int) {
+	return file_trust_anchor_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *RemoteRead) GetRequest() *Read {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
+func (x *RemoteRead) GetOwnerId() uint64 {
+	if x != nil {
+		return x.OwnerId
+	}
+	return 0
+}
+
+// Response of read / remote_read.
 type ReadResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// payload data
-	Value         []byte      `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	// Stored value. Empty if the key does not exist or the caller has no access.
+	Value []byte `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	// Inclusion proof; only set if include_proof was requested and the value exists in
+	// the audit log.
 	Proof         *ProofEntry `protobuf:"bytes,2,opt,name=proof,proto3" json:"proof,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -695,17 +441,21 @@ func (x *ReadResponse) GetProof() *ProofEntry {
 	return nil
 }
 
+// Inclusion proof of a single value in the audit log (Merkle tree, RFC 6962 style).
+// To verify: recompute the leaf hash, then hash it together with inclusion_proof up to
+// the root and compare against log_root for a tree of log_size leaves.
 type ProofEntry struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// leaf hash of corresponding entry in Audit Log
+	// Leaf hash of the corresponding audit log entry:
+	// SHA-256(0x00 || serialized AuditLogEntry).
 	LeafHash []byte `protobuf:"bytes,1,opt,name=leaf_hash,json=leafHash,proto3" json:"leaf_hash,omitempty"`
-	// leaf index of corresponding entry in Audit Log
+	// Index of the leaf in the audit log.
 	LeafIndex int64 `protobuf:"varint,2,opt,name=leaf_index,json=leafIndex,proto3" json:"leaf_index,omitempty"`
-	// the log root at the size of the request time
+	// Root hash of the audit log at the time of the request.
 	LogRoot []byte `protobuf:"bytes,3,opt,name=log_root,json=logRoot,proto3" json:"log_root,omitempty"`
-	// the size of the tree at request time
+	// Number of leaves in the audit log at the time of the request.
 	LogSize int64 `protobuf:"varint,4,opt,name=log_size,json=logSize,proto3" json:"log_size,omitempty"`
-	// node hashes from Merkle tree required for inclusion proof
+	// Sibling node hashes on the path from the leaf to the root.
 	InclusionProof [][]byte `protobuf:"bytes,5,rep,name=inclusion_proof,json=inclusionProof,proto3" json:"inclusion_proof,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
@@ -776,12 +526,18 @@ func (x *ProofEntry) GetInclusionProof() [][]byte {
 	return nil
 }
 
+// Address of a single key-value entry.
 type Location struct {
-	state   protoimpl.MessageState `protogen:"open.v1"`
-	OwnerId uint64                 `protobuf:"varint,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
-	// use the first byte only
-	Category      []byte `protobuf:"bytes,2,opt,name=category,proto3" json:"category,omitempty"`
-	Key           []byte `protobuf:"bytes,3,opt,name=key,proto3" json:"key,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Owner of the data category (can be yourself or another owner).
+	OwnerId uint64 `protobuf:"varint,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	// Category ID; only the first byte is used.
+	Category []byte `protobuf:"bytes,2,opt,name=category,proto3" json:"category,omitempty"`
+	// Key within the category. Arbitrary bytes.
+	Key []byte `protobuf:"bytes,3,opt,name=key,proto3" json:"key,omitempty"`
+	// TA of the owner. Must always be set: use the local TA ID (from add_owner or
+	// get_ta_id) for local owners, or the ID of a paired TA to forward the request.
+	TaId          string `protobuf:"bytes,4,opt,name=ta_id,json=taId,proto3" json:"ta_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -837,10 +593,23 @@ func (x *Location) GetKey() []byte {
 	return nil
 }
 
+func (x *Location) GetTaId() string {
+	if x != nil {
+		return x.TaId
+	}
+	return ""
+}
+
+// Request of update_trust_vec.
 type UpdateTrustVec struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OidTrustee    uint64                 `protobuf:"varint,1,opt,name=oid_trustee,json=oidTrustee,proto3" json:"oid_trustee,omitempty"`
-	TrustDelta    []int32                `protobuf:"varint,2,rep,packed,name=trust_delta,json=trustDelta,proto3" json:"trust_delta,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Owner ID of the owner being rated (trustee).
+	OidTrustee uint64 `protobuf:"varint,1,opt,name=oid_trustee,json=oidTrustee,proto3" json:"oid_trustee,omitempty"`
+	// TA ID of the trustee (local TA ID or ID of a paired remote TA).
+	TaIdTrustee string `protobuf:"bytes,2,opt,name=ta_id_trustee,json=taIdTrustee,proto3" json:"ta_id_trustee,omitempty"`
+	// Delta per trust dimension, added to the current trust vector. Up to 32 entries,
+	// each clamped to [-128, 127].
+	TrustDelta    []int32 `protobuf:"varint,3,rep,packed,name=trust_delta,json=trustDelta,proto3" json:"trust_delta,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -882,6 +651,13 @@ func (x *UpdateTrustVec) GetOidTrustee() uint64 {
 	return 0
 }
 
+func (x *UpdateTrustVec) GetTaIdTrustee() string {
+	if x != nil {
+		return x.TaIdTrustee
+	}
+	return ""
+}
+
 func (x *UpdateTrustVec) GetTrustDelta() []int32 {
 	if x != nil {
 		return x.TrustDelta
@@ -889,6 +665,7 @@ func (x *UpdateTrustVec) GetTrustDelta() []int32 {
 	return nil
 }
 
+// Request of add_owner.
 type AddOwner struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -925,8 +702,10 @@ func (*AddOwner) Descriptor() ([]byte, []int) {
 	return file_trust_anchor_proto_rawDescGZIP(), []int{10}
 }
 
+// Request of set_config.
 type SetConfig struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Configurations to apply; processed in order, stops at the first error.
 	Configs       []*SetConfig_CatConfig `protobuf:"bytes,1,rep,name=configs,proto3" json:"configs,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -969,10 +748,13 @@ func (x *SetConfig) GetConfigs() []*SetConfig_CatConfig {
 	return nil
 }
 
+// Internal storage format of a value (not used in the client API).
 type CortexData struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	LeafHash      []byte                 `protobuf:"bytes,1,opt,name=leaf_hash,json=leafHash,proto3" json:"leaf_hash,omitempty"`
-	Data          []byte                 `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Leaf hash of the audit log entry of the current version.
+	LeafHash []byte `protobuf:"bytes,1,opt,name=leaf_hash,json=leafHash,proto3" json:"leaf_hash,omitempty"`
+	// The stored value.
+	Data          []byte `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1021,11 +803,17 @@ func (x *CortexData) GetData() []byte {
 	return nil
 }
 
+// Audit log leaf, appended for every write (not used in the client API, but needed to
+// recompute leaf hashes for proof verification).
 type AuditLogEntry struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Location      *Location              `protobuf:"bytes,1,opt,name=location,proto3" json:"location,omitempty"`
-	DataHash      []byte                 `protobuf:"bytes,2,opt,name=data_hash,json=dataHash,proto3" json:"data_hash,omitempty"`
-	PrevLeafHash  []byte                 `protobuf:"bytes,3,opt,name=prev_leaf_hash,json=prevLeafHash,proto3" json:"prev_leaf_hash,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Location of the written entry.
+	Location *Location `protobuf:"bytes,1,opt,name=location,proto3" json:"location,omitempty"`
+	// SHA-256 hash of the written value.
+	DataHash []byte `protobuf:"bytes,2,opt,name=data_hash,json=dataHash,proto3" json:"data_hash,omitempty"`
+	// Leaf hash of the previous version of this entry, empty for the first write.
+	// Links all versions of a key into a hash chain (see get_history).
+	PrevLeafHash  []byte `protobuf:"bytes,3,opt,name=prev_leaf_hash,json=prevLeafHash,proto3" json:"prev_leaf_hash,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1081,6 +869,7 @@ func (x *AuditLogEntry) GetPrevLeafHash() []byte {
 	return nil
 }
 
+// Request of get_map.
 type GetMap struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -1117,11 +906,15 @@ func (*GetMap) Descriptor() ([]byte, []int) {
 	return file_trust_anchor_proto_rawDescGZIP(), []int{14}
 }
 
+// Response of get_map.
 type GetMapResponse struct {
-	state         protoimpl.MessageState   `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Your own data categories.
 	OwnCategories []*GetMapResponse_Origin `protobuf:"bytes,1,rep,name=own_categories,json=ownCategories,proto3" json:"own_categories,omitempty"`
-	Links         []*GetMapResponse_Link   `protobuf:"bytes,2,rep,name=links,proto3" json:"links,omitempty"`
-	Peers         []*GetMapResponse_Peer   `protobuf:"bytes,3,rep,name=peers,proto3" json:"peers,omitempty"`
+	// Categories of other owners you currently have access to.
+	Links []*GetMapResponse_Link `protobuf:"bytes,2,rep,name=links,proto3" json:"links,omitempty"`
+	// Owners you have a trust vector for.
+	Peers         []*GetMapResponse_Peer `protobuf:"bytes,3,rep,name=peers,proto3" json:"peers,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1177,17 +970,75 @@ func (x *GetMapResponse) GetPeers() []*GetMapResponse_Peer {
 	return nil
 }
 
+// Global address of an owner.
+type OwnerAddress struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID of the TA the owner is registered at.
+	TaId string `protobuf:"bytes,1,opt,name=ta_id,json=taId,proto3" json:"ta_id,omitempty"`
+	// Owner ID, unique within that TA.
+	OwnerId       uint64 `protobuf:"varint,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OwnerAddress) Reset() {
+	*x = OwnerAddress{}
+	mi := &file_trust_anchor_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OwnerAddress) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OwnerAddress) ProtoMessage() {}
+
+func (x *OwnerAddress) ProtoReflect() protoreflect.Message {
+	mi := &file_trust_anchor_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OwnerAddress.ProtoReflect.Descriptor instead.
+func (*OwnerAddress) Descriptor() ([]byte, []int) {
+	return file_trust_anchor_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *OwnerAddress) GetTaId() string {
+	if x != nil {
+		return x.TaId
+	}
+	return ""
+}
+
+func (x *OwnerAddress) GetOwnerId() uint64 {
+	if x != nil {
+		return x.OwnerId
+	}
+	return 0
+}
+
+// Request of get_category. Only for owners of the local TA.
 type GetCategory struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OwnerId       uint64                 `protobuf:"varint,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
-	Category      []byte                 `protobuf:"bytes,2,opt,name=category,proto3" json:"category,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Owner of the category (yourself or an owner you are linked to).
+	OwnerId uint64 `protobuf:"varint,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	// Category ID; only the first byte is used.
+	Category      []byte `protobuf:"bytes,2,opt,name=category,proto3" json:"category,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetCategory) Reset() {
 	*x = GetCategory{}
-	mi := &file_trust_anchor_proto_msgTypes[16]
+	mi := &file_trust_anchor_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1199,7 +1050,7 @@ func (x *GetCategory) String() string {
 func (*GetCategory) ProtoMessage() {}
 
 func (x *GetCategory) ProtoReflect() protoreflect.Message {
-	mi := &file_trust_anchor_proto_msgTypes[16]
+	mi := &file_trust_anchor_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1212,7 +1063,7 @@ func (x *GetCategory) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCategory.ProtoReflect.Descriptor instead.
 func (*GetCategory) Descriptor() ([]byte, []int) {
-	return file_trust_anchor_proto_rawDescGZIP(), []int{16}
+	return file_trust_anchor_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GetCategory) GetOwnerId() uint64 {
@@ -1229,8 +1080,10 @@ func (x *GetCategory) GetCategory() []byte {
 	return nil
 }
 
+// Response of get_category.
 type GetCategoryResponse struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// All entries of the category.
 	Entries       []*GetCategoryResponse_KvPair `protobuf:"bytes,1,rep,name=entries,proto3" json:"entries,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1238,7 +1091,7 @@ type GetCategoryResponse struct {
 
 func (x *GetCategoryResponse) Reset() {
 	*x = GetCategoryResponse{}
-	mi := &file_trust_anchor_proto_msgTypes[17]
+	mi := &file_trust_anchor_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1250,7 +1103,7 @@ func (x *GetCategoryResponse) String() string {
 func (*GetCategoryResponse) ProtoMessage() {}
 
 func (x *GetCategoryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trust_anchor_proto_msgTypes[17]
+	mi := &file_trust_anchor_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1263,7 +1116,7 @@ func (x *GetCategoryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCategoryResponse.ProtoReflect.Descriptor instead.
 func (*GetCategoryResponse) Descriptor() ([]byte, []int) {
-	return file_trust_anchor_proto_rawDescGZIP(), []int{17}
+	return file_trust_anchor_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *GetCategoryResponse) GetEntries() []*GetCategoryResponse_KvPair {
@@ -1273,16 +1126,19 @@ func (x *GetCategoryResponse) GetEntries() []*GetCategoryResponse_KvPair {
 	return nil
 }
 
+// Request of get_history.
 type GetHistory struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Location      *Location              `protobuf:"bytes,1,opt,name=location,proto3" json:"location,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Entry to get the history for. Only owner_id, category and key are used; the owner
+	// must be registered at the local TA.
+	Location      *Location `protobuf:"bytes,1,opt,name=location,proto3" json:"location,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetHistory) Reset() {
 	*x = GetHistory{}
-	mi := &file_trust_anchor_proto_msgTypes[18]
+	mi := &file_trust_anchor_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1294,7 +1150,7 @@ func (x *GetHistory) String() string {
 func (*GetHistory) ProtoMessage() {}
 
 func (x *GetHistory) ProtoReflect() protoreflect.Message {
-	mi := &file_trust_anchor_proto_msgTypes[18]
+	mi := &file_trust_anchor_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1307,7 +1163,7 @@ func (x *GetHistory) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetHistory.ProtoReflect.Descriptor instead.
 func (*GetHistory) Descriptor() ([]byte, []int) {
-	return file_trust_anchor_proto_rawDescGZIP(), []int{18}
+	return file_trust_anchor_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *GetHistory) GetLocation() *Location {
@@ -1317,8 +1173,10 @@ func (x *GetHistory) GetLocation() *Location {
 	return nil
 }
 
+// Response of get_history.
 type History struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// All versions of the entry, newest first.
 	History       []*History_HistoryEntry `protobuf:"bytes,1,rep,name=history,proto3" json:"history,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1326,7 +1184,7 @@ type History struct {
 
 func (x *History) Reset() {
 	*x = History{}
-	mi := &file_trust_anchor_proto_msgTypes[19]
+	mi := &file_trust_anchor_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1338,7 +1196,7 @@ func (x *History) String() string {
 func (*History) ProtoMessage() {}
 
 func (x *History) ProtoReflect() protoreflect.Message {
-	mi := &file_trust_anchor_proto_msgTypes[19]
+	mi := &file_trust_anchor_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1351,7 +1209,7 @@ func (x *History) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use History.ProtoReflect.Descriptor instead.
 func (*History) Descriptor() ([]byte, []int) {
-	return file_trust_anchor_proto_rawDescGZIP(), []int{19}
+	return file_trust_anchor_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *History) GetHistory() []*History_HistoryEntry {
@@ -1361,6 +1219,7 @@ func (x *History) GetHistory() []*History_HistoryEntry {
 	return nil
 }
 
+// Request of get_other_ids.
 type GetOtherIds struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -1369,7 +1228,7 @@ type GetOtherIds struct {
 
 func (x *GetOtherIds) Reset() {
 	*x = GetOtherIds{}
-	mi := &file_trust_anchor_proto_msgTypes[20]
+	mi := &file_trust_anchor_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1381,7 +1240,7 @@ func (x *GetOtherIds) String() string {
 func (*GetOtherIds) ProtoMessage() {}
 
 func (x *GetOtherIds) ProtoReflect() protoreflect.Message {
-	mi := &file_trust_anchor_proto_msgTypes[20]
+	mi := &file_trust_anchor_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1394,19 +1253,21 @@ func (x *GetOtherIds) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetOtherIds.ProtoReflect.Descriptor instead.
 func (*GetOtherIds) Descriptor() ([]byte, []int) {
-	return file_trust_anchor_proto_rawDescGZIP(), []int{20}
+	return file_trust_anchor_proto_rawDescGZIP(), []int{21}
 }
 
+// Response of get_other_ids.
 type GetOtherIdsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OtherIds      []uint64               `protobuf:"varint,1,rep,packed,name=other_ids,json=otherIds,proto3" json:"other_ids,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// All known owners except the caller.
+	OtherIds      []*OwnerAddress `protobuf:"bytes,1,rep,name=other_ids,json=otherIds,proto3" json:"other_ids,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetOtherIdsResponse) Reset() {
 	*x = GetOtherIdsResponse{}
-	mi := &file_trust_anchor_proto_msgTypes[21]
+	mi := &file_trust_anchor_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1418,7 +1279,7 @@ func (x *GetOtherIdsResponse) String() string {
 func (*GetOtherIdsResponse) ProtoMessage() {}
 
 func (x *GetOtherIdsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_trust_anchor_proto_msgTypes[21]
+	mi := &file_trust_anchor_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1431,20 +1292,512 @@ func (x *GetOtherIdsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetOtherIdsResponse.ProtoReflect.Descriptor instead.
 func (*GetOtherIdsResponse) Descriptor() ([]byte, []int) {
-	return file_trust_anchor_proto_rawDescGZIP(), []int{21}
+	return file_trust_anchor_proto_rawDescGZIP(), []int{22}
 }
 
-func (x *GetOtherIdsResponse) GetOtherIds() []uint64 {
+func (x *GetOtherIdsResponse) GetOtherIds() []*OwnerAddress {
 	if x != nil {
 		return x.OtherIds
 	}
 	return nil
 }
 
+// Request of remote_ta_pairing (inter-TA).
+type TaPair struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The TA ID of the requesting TA.
+	TaId string `protobuf:"bytes,1,opt,name=ta_id,json=taId,proto3" json:"ta_id,omitempty"`
+	// The endpoint where the requesting TA's API is reachable (e.g. "http://host:port").
+	Endpoint string `protobuf:"bytes,2,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
+	// Owner ID reserved at the requesting TA for the responding TA. The responding TA
+	// uses it as 'id-bin' when calling the requesting TA.
+	OwnerId       uint64 `protobuf:"varint,3,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TaPair) Reset() {
+	*x = TaPair{}
+	mi := &file_trust_anchor_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TaPair) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TaPair) ProtoMessage() {}
+
+func (x *TaPair) ProtoReflect() protoreflect.Message {
+	mi := &file_trust_anchor_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TaPair.ProtoReflect.Descriptor instead.
+func (*TaPair) Descriptor() ([]byte, []int) {
+	return file_trust_anchor_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *TaPair) GetTaId() string {
+	if x != nil {
+		return x.TaId
+	}
+	return ""
+}
+
+func (x *TaPair) GetEndpoint() string {
+	if x != nil {
+		return x.Endpoint
+	}
+	return ""
+}
+
+func (x *TaPair) GetOwnerId() uint64 {
+	if x != nil {
+		return x.OwnerId
+	}
+	return 0
+}
+
+// Response of remote_ta_pairing (inter-TA).
+type TaPairResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The TA ID of the responding TA.
+	TaId string `protobuf:"bytes,1,opt,name=ta_id,json=taId,proto3" json:"ta_id,omitempty"`
+	// Owner ID assigned to the requesting TA at the responding TA. The requesting TA uses
+	// it as 'id-bin' when calling the responding TA.
+	OwnerId       uint64 `protobuf:"varint,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TaPairResponse) Reset() {
+	*x = TaPairResponse{}
+	mi := &file_trust_anchor_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TaPairResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TaPairResponse) ProtoMessage() {}
+
+func (x *TaPairResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_trust_anchor_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TaPairResponse.ProtoReflect.Descriptor instead.
+func (*TaPairResponse) Descriptor() ([]byte, []int) {
+	return file_trust_anchor_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *TaPairResponse) GetTaId() string {
+	if x != nil {
+		return x.TaId
+	}
+	return ""
+}
+
+func (x *TaPairResponse) GetOwnerId() uint64 {
+	if x != nil {
+		return x.OwnerId
+	}
+	return 0
+}
+
+// Response of get_ta_id.
+type TaId struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TaId          string                 `protobuf:"bytes,1,opt,name=ta_id,json=taId,proto3" json:"ta_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TaId) Reset() {
+	*x = TaId{}
+	mi := &file_trust_anchor_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TaId) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TaId) ProtoMessage() {}
+
+func (x *TaId) ProtoReflect() protoreflect.Message {
+	mi := &file_trust_anchor_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TaId.ProtoReflect.Descriptor instead.
+func (*TaId) Descriptor() ([]byte, []int) {
+	return file_trust_anchor_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *TaId) GetTaId() string {
+	if x != nil {
+		return x.TaId
+	}
+	return ""
+}
+
+// Request of remote_add_link_index (inter-TA).
+type RemoteAddLink struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Owner ID of the trustee at the called TA (gets access).
+	TrusteeId uint64 `protobuf:"varint,1,opt,name=trustee_id,json=trusteeId,proto3" json:"trustee_id,omitempty"`
+	// Owner ID of the trustor at the calling TA (grants access).
+	TrustorId uint64 `protobuf:"varint,2,opt,name=trustor_id,json=trustorId,proto3" json:"trustor_id,omitempty"`
+	// Category of the trustor; only the first byte is used.
+	CategoryId    []byte `protobuf:"bytes,3,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoteAddLink) Reset() {
+	*x = RemoteAddLink{}
+	mi := &file_trust_anchor_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoteAddLink) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoteAddLink) ProtoMessage() {}
+
+func (x *RemoteAddLink) ProtoReflect() protoreflect.Message {
+	mi := &file_trust_anchor_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoteAddLink.ProtoReflect.Descriptor instead.
+func (*RemoteAddLink) Descriptor() ([]byte, []int) {
+	return file_trust_anchor_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *RemoteAddLink) GetTrusteeId() uint64 {
+	if x != nil {
+		return x.TrusteeId
+	}
+	return 0
+}
+
+func (x *RemoteAddLink) GetTrustorId() uint64 {
+	if x != nil {
+		return x.TrustorId
+	}
+	return 0
+}
+
+func (x *RemoteAddLink) GetCategoryId() []byte {
+	if x != nil {
+		return x.CategoryId
+	}
+	return nil
+}
+
+// Request of remote_link_index_batch (inter-TA).
+type RemoteLinkIndexBatch struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Link changes in the order they happened at the calling TA.
+	Changes       []*RemoteLinkIndexChange `protobuf:"bytes,1,rep,name=changes,proto3" json:"changes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoteLinkIndexBatch) Reset() {
+	*x = RemoteLinkIndexBatch{}
+	mi := &file_trust_anchor_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoteLinkIndexBatch) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoteLinkIndexBatch) ProtoMessage() {}
+
+func (x *RemoteLinkIndexBatch) ProtoReflect() protoreflect.Message {
+	mi := &file_trust_anchor_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoteLinkIndexBatch.ProtoReflect.Descriptor instead.
+func (*RemoteLinkIndexBatch) Descriptor() ([]byte, []int) {
+	return file_trust_anchor_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *RemoteLinkIndexBatch) GetChanges() []*RemoteLinkIndexChange {
+	if x != nil {
+		return x.Changes
+	}
+	return nil
+}
+
+// One link change in a RemoteLinkIndexBatch.
+type RemoteLinkIndexChange struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Owner ID of the trustee at the called TA.
+	TrusteeId uint64 `protobuf:"varint,1,opt,name=trustee_id,json=trusteeId,proto3" json:"trustee_id,omitempty"`
+	// Owner ID of the trustor at the calling TA.
+	TrustorId uint64 `protobuf:"varint,2,opt,name=trustor_id,json=trustorId,proto3" json:"trustor_id,omitempty"`
+	// Category of the trustor; only the first byte is used.
+	CategoryId []byte `protobuf:"bytes,3,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	// true: access granted (link added), false: access revoked (link removed).
+	Added         bool `protobuf:"varint,4,opt,name=added,proto3" json:"added,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoteLinkIndexChange) Reset() {
+	*x = RemoteLinkIndexChange{}
+	mi := &file_trust_anchor_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoteLinkIndexChange) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoteLinkIndexChange) ProtoMessage() {}
+
+func (x *RemoteLinkIndexChange) ProtoReflect() protoreflect.Message {
+	mi := &file_trust_anchor_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoteLinkIndexChange.ProtoReflect.Descriptor instead.
+func (*RemoteLinkIndexChange) Descriptor() ([]byte, []int) {
+	return file_trust_anchor_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *RemoteLinkIndexChange) GetTrusteeId() uint64 {
+	if x != nil {
+		return x.TrusteeId
+	}
+	return 0
+}
+
+func (x *RemoteLinkIndexChange) GetTrustorId() uint64 {
+	if x != nil {
+		return x.TrustorId
+	}
+	return 0
+}
+
+func (x *RemoteLinkIndexChange) GetCategoryId() []byte {
+	if x != nil {
+		return x.CategoryId
+	}
+	return nil
+}
+
+func (x *RemoteLinkIndexChange) GetAdded() bool {
+	if x != nil {
+		return x.Added
+	}
+	return false
+}
+
+// Request of remote_remove_link_index (inter-TA).
+type RemoteRemoveLink struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Owner ID of the trustee at the called TA (loses access).
+	TrusteeId uint64 `protobuf:"varint,1,opt,name=trustee_id,json=trusteeId,proto3" json:"trustee_id,omitempty"`
+	// Owner ID of the trustor at the calling TA (revokes access).
+	TrustorId uint64 `protobuf:"varint,2,opt,name=trustor_id,json=trustorId,proto3" json:"trustor_id,omitempty"`
+	// Category of the trustor; only the first byte is used.
+	CategoryId    []byte `protobuf:"bytes,3,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoteRemoveLink) Reset() {
+	*x = RemoteRemoveLink{}
+	mi := &file_trust_anchor_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoteRemoveLink) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoteRemoveLink) ProtoMessage() {}
+
+func (x *RemoteRemoveLink) ProtoReflect() protoreflect.Message {
+	mi := &file_trust_anchor_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoteRemoveLink.ProtoReflect.Descriptor instead.
+func (*RemoteRemoveLink) Descriptor() ([]byte, []int) {
+	return file_trust_anchor_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *RemoteRemoveLink) GetTrusteeId() uint64 {
+	if x != nil {
+		return x.TrusteeId
+	}
+	return 0
+}
+
+func (x *RemoteRemoveLink) GetTrustorId() uint64 {
+	if x != nil {
+		return x.TrustorId
+	}
+	return 0
+}
+
+func (x *RemoteRemoveLink) GetCategoryId() []byte {
+	if x != nil {
+		return x.CategoryId
+	}
+	return nil
+}
+
+// Notification sent via subscribe_link_updates to the trustee.
+type LinkUpdateNotification struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Owner ID of the owner who granted/revoked access (trustor).
+	TrustorId uint64 `protobuf:"varint,1,opt,name=trustor_id,json=trustorId,proto3" json:"trustor_id,omitempty"`
+	// TA ID of the trustor.
+	TrustorTaId string `protobuf:"bytes,2,opt,name=trustor_ta_id,json=trustorTaId,proto3" json:"trustor_ta_id,omitempty"`
+	// Affected category of the trustor (single byte).
+	Category []byte `protobuf:"bytes,3,opt,name=category,proto3" json:"category,omitempty"`
+	// Whether access was granted or revoked.
+	LinkUpdate    LinkUpdate `protobuf:"varint,4,opt,name=link_update,json=linkUpdate,proto3,enum=trust_anchor.LinkUpdate" json:"link_update,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LinkUpdateNotification) Reset() {
+	*x = LinkUpdateNotification{}
+	mi := &file_trust_anchor_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LinkUpdateNotification) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LinkUpdateNotification) ProtoMessage() {}
+
+func (x *LinkUpdateNotification) ProtoReflect() protoreflect.Message {
+	mi := &file_trust_anchor_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LinkUpdateNotification.ProtoReflect.Descriptor instead.
+func (*LinkUpdateNotification) Descriptor() ([]byte, []int) {
+	return file_trust_anchor_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *LinkUpdateNotification) GetTrustorId() uint64 {
+	if x != nil {
+		return x.TrustorId
+	}
+	return 0
+}
+
+func (x *LinkUpdateNotification) GetTrustorTaId() string {
+	if x != nil {
+		return x.TrustorTaId
+	}
+	return ""
+}
+
+func (x *LinkUpdateNotification) GetCategory() []byte {
+	if x != nil {
+		return x.Category
+	}
+	return nil
+}
+
+func (x *LinkUpdateNotification) GetLinkUpdate() LinkUpdate {
+	if x != nil {
+		return x.LinkUpdate
+	}
+	return LinkUpdate_Added
+}
+
 type SetConfig_CatConfig struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// use the first byte only
-	Category         []byte `protobuf:"bytes,1,opt,name=category,proto3" json:"category,omitempty"`
+	// Category ID; only the first byte is used. Must not be 0 and must already exist.
+	Category []byte `protobuf:"bytes,1,opt,name=category,proto3" json:"category,omitempty"`
+	// Weight per trust dimension (one unsigned byte each, up to 32 bytes; missing
+	// entries are 0). Access is granted if
+	//
+	//	sum_i(decision_function[i] * trust_vector[i]) >= 40.
+	//
+	// Example: [4, 0, 0, ...] grants access to everyone with trust_vector[0] >= 10.
 	DecisionFunction []byte `protobuf:"bytes,2,opt,name=decision_function,json=decisionFunction,proto3" json:"decision_function,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
@@ -1452,7 +1805,7 @@ type SetConfig_CatConfig struct {
 
 func (x *SetConfig_CatConfig) Reset() {
 	*x = SetConfig_CatConfig{}
-	mi := &file_trust_anchor_proto_msgTypes[22]
+	mi := &file_trust_anchor_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1464,7 +1817,7 @@ func (x *SetConfig_CatConfig) String() string {
 func (*SetConfig_CatConfig) ProtoMessage() {}
 
 func (x *SetConfig_CatConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_trust_anchor_proto_msgTypes[22]
+	mi := &file_trust_anchor_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1495,16 +1848,18 @@ func (x *SetConfig_CatConfig) GetDecisionFunction() []byte {
 }
 
 type GetMapResponse_Origin struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CategoryId    []byte                 `protobuf:"bytes,1,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
-	Trustees      []uint64               `protobuf:"varint,2,rep,packed,name=trustees,proto3" json:"trustees,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Category ID (single byte).
+	CategoryId []byte `protobuf:"bytes,1,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	// Owners that currently have access (a link) to this category.
+	Trustees      []*OwnerAddress `protobuf:"bytes,2,rep,name=trustees,proto3" json:"trustees,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetMapResponse_Origin) Reset() {
 	*x = GetMapResponse_Origin{}
-	mi := &file_trust_anchor_proto_msgTypes[23]
+	mi := &file_trust_anchor_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1516,7 +1871,7 @@ func (x *GetMapResponse_Origin) String() string {
 func (*GetMapResponse_Origin) ProtoMessage() {}
 
 func (x *GetMapResponse_Origin) ProtoReflect() protoreflect.Message {
-	mi := &file_trust_anchor_proto_msgTypes[23]
+	mi := &file_trust_anchor_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1539,7 +1894,7 @@ func (x *GetMapResponse_Origin) GetCategoryId() []byte {
 	return nil
 }
 
-func (x *GetMapResponse_Origin) GetTrustees() []uint64 {
+func (x *GetMapResponse_Origin) GetTrustees() []*OwnerAddress {
 	if x != nil {
 		return x.Trustees
 	}
@@ -1547,16 +1902,18 @@ func (x *GetMapResponse_Origin) GetTrustees() []uint64 {
 }
 
 type GetMapResponse_Link struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OwnerId       uint64                 `protobuf:"varint,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
-	Categories    []byte                 `protobuf:"bytes,2,opt,name=categories,proto3" json:"categories,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The owner of the linked categories.
+	Owner *OwnerAddress `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	// IDs of the accessible categories, one byte per category.
+	Categories    []byte `protobuf:"bytes,2,opt,name=categories,proto3" json:"categories,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetMapResponse_Link) Reset() {
 	*x = GetMapResponse_Link{}
-	mi := &file_trust_anchor_proto_msgTypes[24]
+	mi := &file_trust_anchor_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1568,7 +1925,7 @@ func (x *GetMapResponse_Link) String() string {
 func (*GetMapResponse_Link) ProtoMessage() {}
 
 func (x *GetMapResponse_Link) ProtoReflect() protoreflect.Message {
-	mi := &file_trust_anchor_proto_msgTypes[24]
+	mi := &file_trust_anchor_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1584,11 +1941,11 @@ func (*GetMapResponse_Link) Descriptor() ([]byte, []int) {
 	return file_trust_anchor_proto_rawDescGZIP(), []int{15, 1}
 }
 
-func (x *GetMapResponse_Link) GetOwnerId() uint64 {
+func (x *GetMapResponse_Link) GetOwner() *OwnerAddress {
 	if x != nil {
-		return x.OwnerId
+		return x.Owner
 	}
-	return 0
+	return nil
 }
 
 func (x *GetMapResponse_Link) GetCategories() []byte {
@@ -1599,16 +1956,18 @@ func (x *GetMapResponse_Link) GetCategories() []byte {
 }
 
 type GetMapResponse_Peer struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	TrustVector   []byte                 `protobuf:"bytes,2,opt,name=trust_vector,json=trustVector,proto3" json:"trust_vector,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Address of the rated owner.
+	Id *OwnerAddress `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Your current trust vector towards this owner, one unsigned byte per dimension.
+	TrustVector   []byte `protobuf:"bytes,2,opt,name=trust_vector,json=trustVector,proto3" json:"trust_vector,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetMapResponse_Peer) Reset() {
 	*x = GetMapResponse_Peer{}
-	mi := &file_trust_anchor_proto_msgTypes[25]
+	mi := &file_trust_anchor_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1620,7 +1979,7 @@ func (x *GetMapResponse_Peer) String() string {
 func (*GetMapResponse_Peer) ProtoMessage() {}
 
 func (x *GetMapResponse_Peer) ProtoReflect() protoreflect.Message {
-	mi := &file_trust_anchor_proto_msgTypes[25]
+	mi := &file_trust_anchor_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1636,11 +1995,11 @@ func (*GetMapResponse_Peer) Descriptor() ([]byte, []int) {
 	return file_trust_anchor_proto_rawDescGZIP(), []int{15, 2}
 }
 
-func (x *GetMapResponse_Peer) GetId() uint64 {
+func (x *GetMapResponse_Peer) GetId() *OwnerAddress {
 	if x != nil {
 		return x.Id
 	}
-	return 0
+	return nil
 }
 
 func (x *GetMapResponse_Peer) GetTrustVector() []byte {
@@ -1660,7 +2019,7 @@ type GetCategoryResponse_KvPair struct {
 
 func (x *GetCategoryResponse_KvPair) Reset() {
 	*x = GetCategoryResponse_KvPair{}
-	mi := &file_trust_anchor_proto_msgTypes[26]
+	mi := &file_trust_anchor_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1672,7 +2031,7 @@ func (x *GetCategoryResponse_KvPair) String() string {
 func (*GetCategoryResponse_KvPair) ProtoMessage() {}
 
 func (x *GetCategoryResponse_KvPair) ProtoReflect() protoreflect.Message {
-	mi := &file_trust_anchor_proto_msgTypes[26]
+	mi := &file_trust_anchor_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1685,7 +2044,7 @@ func (x *GetCategoryResponse_KvPair) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCategoryResponse_KvPair.ProtoReflect.Descriptor instead.
 func (*GetCategoryResponse_KvPair) Descriptor() ([]byte, []int) {
-	return file_trust_anchor_proto_rawDescGZIP(), []int{17, 0}
+	return file_trust_anchor_proto_rawDescGZIP(), []int{18, 0}
 }
 
 func (x *GetCategoryResponse_KvPair) GetKey() []byte {
@@ -1703,19 +2062,25 @@ func (x *GetCategoryResponse_KvPair) GetValue() []byte {
 }
 
 type History_HistoryEntry struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	LeafIndex      int64                  `protobuf:"varint,1,opt,name=leaf_index,json=leafIndex,proto3" json:"leaf_index,omitempty"`
-	DataHash       []byte                 `protobuf:"bytes,2,opt,name=data_hash,json=dataHash,proto3" json:"data_hash,omitempty"`
-	InclusionProof [][]byte               `protobuf:"bytes,3,rep,name=inclusion_proof,json=inclusionProof,proto3" json:"inclusion_proof,omitempty"`
-	LogSize        int64                  `protobuf:"varint,4,opt,name=log_size,json=logSize,proto3" json:"log_size,omitempty"`
-	LogRoot        []byte                 `protobuf:"bytes,5,opt,name=log_root,json=logRoot,proto3" json:"log_root,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Index of this version's leaf in the audit log.
+	LeafIndex int64 `protobuf:"varint,1,opt,name=leaf_index,json=leafIndex,proto3" json:"leaf_index,omitempty"`
+	// SHA-256 hash of the value of this version (the value itself is not stored in
+	// the audit log).
+	DataHash []byte `protobuf:"bytes,2,opt,name=data_hash,json=dataHash,proto3" json:"data_hash,omitempty"`
+	// Inclusion proof for this version's leaf (see ProofEntry).
+	InclusionProof [][]byte `protobuf:"bytes,3,rep,name=inclusion_proof,json=inclusionProof,proto3" json:"inclusion_proof,omitempty"`
+	// Number of leaves in the audit log the proof refers to.
+	LogSize int64 `protobuf:"varint,4,opt,name=log_size,json=logSize,proto3" json:"log_size,omitempty"`
+	// Root hash of the audit log the proof refers to.
+	LogRoot       []byte `protobuf:"bytes,5,opt,name=log_root,json=logRoot,proto3" json:"log_root,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *History_HistoryEntry) Reset() {
 	*x = History_HistoryEntry{}
-	mi := &file_trust_anchor_proto_msgTypes[27]
+	mi := &file_trust_anchor_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1727,7 +2092,7 @@ func (x *History_HistoryEntry) String() string {
 func (*History_HistoryEntry) ProtoMessage() {}
 
 func (x *History_HistoryEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_trust_anchor_proto_msgTypes[27]
+	mi := &file_trust_anchor_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1740,7 +2105,7 @@ func (x *History_HistoryEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use History_HistoryEntry.ProtoReflect.Descriptor instead.
 func (*History_HistoryEntry) Descriptor() ([]byte, []int) {
-	return file_trust_anchor_proto_rawDescGZIP(), []int{19, 0}
+	return file_trust_anchor_proto_rawDescGZIP(), []int{20, 0}
 }
 
 func (x *History_HistoryEntry) GetLeafIndex() int64 {
@@ -1782,43 +2147,24 @@ var File_trust_anchor_proto protoreflect.FileDescriptor
 
 const file_trust_anchor_proto_rawDesc = "" +
 	"\n" +
-	"\x12trust_anchor.proto\x12\ftrust_anchor\"\xbd\x04\n" +
-	"\x12TrustAnchorRequest\x12+\n" +
-	"\x05write\x18\x02 \x01(\v2\x13.trust_anchor.WriteH\x00R\x05write\x12(\n" +
-	"\x04read\x18\x03 \x01(\v2\x12.trust_anchor.ReadH\x00R\x04read\x12H\n" +
-	"\x10update_trust_vec\x18\x04 \x01(\v2\x1c.trust_anchor.UpdateTrustVecH\x00R\x0eupdateTrustVec\x125\n" +
-	"\tadd_owner\x18\x05 \x01(\v2\x16.trust_anchor.AddOwnerH\x00R\baddOwner\x128\n" +
-	"\n" +
-	"set_config\x18\x06 \x01(\v2\x17.trust_anchor.SetConfigH\x00R\tsetConfig\x12/\n" +
-	"\aget_map\x18\a \x01(\v2\x14.trust_anchor.GetMapH\x00R\x06getMap\x12>\n" +
-	"\fget_category\x18\b \x01(\v2\x19.trust_anchor.GetCategoryH\x00R\vgetCategory\x12;\n" +
-	"\vget_history\x18\t \x01(\v2\x18.trust_anchor.GetHistoryH\x00R\n" +
-	"getHistory\x12?\n" +
-	"\rget_other_ids\x18\n" +
-	" \x01(\v2\x19.trust_anchor.GetOtherIdsH\x00R\vgetOtherIds\x12\x1b\n" +
-	"\tsender_id\x18\x01 \x01(\x04R\bsenderIdB\t\n" +
-	"\arequest\"\x94\x05\n" +
-	"\x13TrustAnchorResponse\x12<\n" +
-	"\x0eempty_response\x18\x03 \x01(\v2\x13.trust_anchor.EmptyH\x00R\remptyResponse\x12A\n" +
-	"\rread_response\x18\x04 \x01(\v2\x1a.trust_anchor.ReadResponseH\x00R\freadResponse\x12N\n" +
-	"\x12add_owner_response\x18\x05 \x01(\v2\x1e.trust_anchor.AddOwnerResponseH\x00R\x10addOwnerResponse\x12H\n" +
-	"\x10get_map_response\x18\x06 \x01(\v2\x1c.trust_anchor.GetMapResponseH\x00R\x0egetMapResponse\x12W\n" +
-	"\x15get_category_response\x18\a \x01(\v2!.trust_anchor.GetCategoryResponseH\x00R\x13getCategoryResponse\x12I\n" +
-	"\x14get_history_response\x18\b \x01(\v2\x15.trust_anchor.HistoryH\x00R\x12getHistoryResponse\x12X\n" +
-	"\x16get_other_ids_response\x18\t \x01(\v2!.trust_anchor.GetOtherIdsResponseH\x00R\x13getOtherIdsResponse\x12,\n" +
-	"\x06status\x18\x01 \x01(\x0e2\x14.trust_anchor.StatusR\x06status\x12*\n" +
-	"\x11execution_time_us\x18\x02 \x01(\rR\x0fexecutionTimeUsB\n" +
-	"\n" +
-	"\bresponse\"\a\n" +
-	"\x05Empty\"-\n" +
+	"\x12trust_anchor.proto\x12\ftrust_anchor\"\a\n" +
+	"\x05Empty\"B\n" +
 	"\x10AddOwnerResponse\x12\x19\n" +
-	"\bowner_id\x18\x01 \x01(\x04R\aownerId\"Q\n" +
+	"\bowner_id\x18\x01 \x01(\x04R\aownerId\x12\x13\n" +
+	"\x05ta_id\x18\x02 \x01(\tR\x04taId\"Q\n" +
 	"\x05Write\x122\n" +
 	"\blocation\x18\x01 \x01(\v2\x16.trust_anchor.LocationR\blocation\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\fR\x05value\"_\n" +
+	"\x05value\x18\x02 \x01(\fR\x05value\"W\n" +
+	"\vRemoteWrite\x12-\n" +
+	"\arequest\x18\x01 \x01(\v2\x13.trust_anchor.WriteR\arequest\x12\x19\n" +
+	"\bowner_id\x18\x02 \x01(\x04R\aownerId\"_\n" +
 	"\x04Read\x122\n" +
 	"\blocation\x18\x01 \x01(\v2\x16.trust_anchor.LocationR\blocation\x12#\n" +
-	"\rinclude_proof\x18\x02 \x01(\bR\fincludeProof\"T\n" +
+	"\rinclude_proof\x18\x02 \x01(\bR\fincludeProof\"U\n" +
+	"\n" +
+	"RemoteRead\x12,\n" +
+	"\arequest\x18\x01 \x01(\v2\x12.trust_anchor.ReadR\arequest\x12\x19\n" +
+	"\bowner_id\x18\x02 \x01(\x04R\aownerId\"T\n" +
 	"\fReadResponse\x12\x14\n" +
 	"\x05value\x18\x01 \x01(\fR\x05value\x12.\n" +
 	"\x05proof\x18\x02 \x01(\v2\x18.trust_anchor.ProofEntryR\x05proof\"\xa7\x01\n" +
@@ -1829,15 +2175,17 @@ const file_trust_anchor_proto_rawDesc = "" +
 	"leaf_index\x18\x02 \x01(\x03R\tleafIndex\x12\x19\n" +
 	"\blog_root\x18\x03 \x01(\fR\alogRoot\x12\x19\n" +
 	"\blog_size\x18\x04 \x01(\x03R\alogSize\x12'\n" +
-	"\x0finclusion_proof\x18\x05 \x03(\fR\x0einclusionProof\"S\n" +
+	"\x0finclusion_proof\x18\x05 \x03(\fR\x0einclusionProof\"h\n" +
 	"\bLocation\x12\x19\n" +
 	"\bowner_id\x18\x01 \x01(\x04R\aownerId\x12\x1a\n" +
 	"\bcategory\x18\x02 \x01(\fR\bcategory\x12\x10\n" +
-	"\x03key\x18\x03 \x01(\fR\x03key\"R\n" +
+	"\x03key\x18\x03 \x01(\fR\x03key\x12\x13\n" +
+	"\x05ta_id\x18\x04 \x01(\tR\x04taId\"v\n" +
 	"\x0eUpdateTrustVec\x12\x1f\n" +
 	"\void_trustee\x18\x01 \x01(\x04R\n" +
-	"oidTrustee\x12\x1f\n" +
-	"\vtrust_delta\x18\x02 \x03(\x05R\n" +
+	"oidTrustee\x12\"\n" +
+	"\rta_id_trustee\x18\x02 \x01(\tR\vtaIdTrustee\x12\x1f\n" +
+	"\vtrust_delta\x18\x03 \x03(\x05R\n" +
 	"trustDelta\"\n" +
 	"\n" +
 	"\bAddOwner\"\x9e\x01\n" +
@@ -1854,23 +2202,26 @@ const file_trust_anchor_proto_rawDesc = "" +
 	"\blocation\x18\x01 \x01(\v2\x16.trust_anchor.LocationR\blocation\x12\x1b\n" +
 	"\tdata_hash\x18\x02 \x01(\fR\bdataHash\x12$\n" +
 	"\x0eprev_leaf_hash\x18\x03 \x01(\fR\fprevLeafHash\"\b\n" +
-	"\x06GetMap\"\x93\x03\n" +
+	"\x06GetMap\"\xe2\x03\n" +
 	"\x0eGetMapResponse\x12J\n" +
 	"\x0eown_categories\x18\x01 \x03(\v2#.trust_anchor.GetMapResponse.OriginR\rownCategories\x127\n" +
 	"\x05links\x18\x02 \x03(\v2!.trust_anchor.GetMapResponse.LinkR\x05links\x127\n" +
-	"\x05peers\x18\x03 \x03(\v2!.trust_anchor.GetMapResponse.PeerR\x05peers\x1aE\n" +
+	"\x05peers\x18\x03 \x03(\v2!.trust_anchor.GetMapResponse.PeerR\x05peers\x1aa\n" +
 	"\x06Origin\x12\x1f\n" +
 	"\vcategory_id\x18\x01 \x01(\fR\n" +
-	"categoryId\x12\x1a\n" +
-	"\btrustees\x18\x02 \x03(\x04R\btrustees\x1aA\n" +
-	"\x04Link\x12\x19\n" +
-	"\bowner_id\x18\x01 \x01(\x04R\aownerId\x12\x1e\n" +
+	"categoryId\x126\n" +
+	"\btrustees\x18\x02 \x03(\v2\x1a.trust_anchor.OwnerAddressR\btrustees\x1aX\n" +
+	"\x04Link\x120\n" +
+	"\x05owner\x18\x01 \x01(\v2\x1a.trust_anchor.OwnerAddressR\x05owner\x12\x1e\n" +
 	"\n" +
 	"categories\x18\x02 \x01(\fR\n" +
-	"categories\x1a9\n" +
-	"\x04Peer\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x04R\x02id\x12!\n" +
-	"\ftrust_vector\x18\x02 \x01(\fR\vtrustVector\"D\n" +
+	"categories\x1aU\n" +
+	"\x04Peer\x12*\n" +
+	"\x02id\x18\x01 \x01(\v2\x1a.trust_anchor.OwnerAddressR\x02id\x12!\n" +
+	"\ftrust_vector\x18\x02 \x01(\fR\vtrustVector\">\n" +
+	"\fOwnerAddress\x12\x13\n" +
+	"\x05ta_id\x18\x01 \x01(\tR\x04taId\x12\x19\n" +
+	"\bowner_id\x18\x02 \x01(\x04R\aownerId\"D\n" +
 	"\vGetCategory\x12\x19\n" +
 	"\bowner_id\x18\x01 \x01(\x04R\aownerId\x12\x1a\n" +
 	"\bcategory\x18\x02 \x01(\fR\bcategory\"\x8b\x01\n" +
@@ -1891,25 +2242,72 @@ const file_trust_anchor_proto_rawDesc = "" +
 	"\x0finclusion_proof\x18\x03 \x03(\fR\x0einclusionProof\x12\x19\n" +
 	"\blog_size\x18\x04 \x01(\x03R\alogSize\x12\x19\n" +
 	"\blog_root\x18\x05 \x01(\fR\alogRoot\"\r\n" +
-	"\vGetOtherIds\"2\n" +
-	"\x13GetOtherIdsResponse\x12\x1b\n" +
-	"\tother_ids\x18\x01 \x03(\x04R\botherIds*3\n" +
-	"\x06Status\x12\x06\n" +
-	"\x02Ok\x10\x00\x12\x0e\n" +
+	"\vGetOtherIds\"N\n" +
+	"\x13GetOtherIdsResponse\x127\n" +
+	"\tother_ids\x18\x01 \x03(\v2\x1a.trust_anchor.OwnerAddressR\botherIds\"T\n" +
+	"\x06TaPair\x12\x13\n" +
+	"\x05ta_id\x18\x01 \x01(\tR\x04taId\x12\x1a\n" +
+	"\bendpoint\x18\x02 \x01(\tR\bendpoint\x12\x19\n" +
+	"\bowner_id\x18\x03 \x01(\x04R\aownerId\"@\n" +
+	"\x0eTaPairResponse\x12\x13\n" +
+	"\x05ta_id\x18\x01 \x01(\tR\x04taId\x12\x19\n" +
+	"\bowner_id\x18\x02 \x01(\x04R\aownerId\"\x1b\n" +
+	"\x04TaId\x12\x13\n" +
+	"\x05ta_id\x18\x01 \x01(\tR\x04taId\"n\n" +
+	"\rRemoteAddLink\x12\x1d\n" +
 	"\n" +
-	"BadRequest\x10\x01\x12\x11\n" +
-	"\rInternalError\x10\x022\xee\x04\n" +
-	"\vTrustAnchor\x123\n" +
+	"trustee_id\x18\x01 \x01(\x04R\ttrusteeId\x12\x1d\n" +
+	"\n" +
+	"trustor_id\x18\x02 \x01(\x04R\ttrustorId\x12\x1f\n" +
+	"\vcategory_id\x18\x03 \x01(\fR\n" +
+	"categoryId\"U\n" +
+	"\x14RemoteLinkIndexBatch\x12=\n" +
+	"\achanges\x18\x01 \x03(\v2#.trust_anchor.RemoteLinkIndexChangeR\achanges\"\x8c\x01\n" +
+	"\x15RemoteLinkIndexChange\x12\x1d\n" +
+	"\n" +
+	"trustee_id\x18\x01 \x01(\x04R\ttrusteeId\x12\x1d\n" +
+	"\n" +
+	"trustor_id\x18\x02 \x01(\x04R\ttrustorId\x12\x1f\n" +
+	"\vcategory_id\x18\x03 \x01(\fR\n" +
+	"categoryId\x12\x14\n" +
+	"\x05added\x18\x04 \x01(\bR\x05added\"q\n" +
+	"\x10RemoteRemoveLink\x12\x1d\n" +
+	"\n" +
+	"trustee_id\x18\x01 \x01(\x04R\ttrusteeId\x12\x1d\n" +
+	"\n" +
+	"trustor_id\x18\x02 \x01(\x04R\ttrustorId\x12\x1f\n" +
+	"\vcategory_id\x18\x03 \x01(\fR\n" +
+	"categoryId\"\xb2\x01\n" +
+	"\x16LinkUpdateNotification\x12\x1d\n" +
+	"\n" +
+	"trustor_id\x18\x01 \x01(\x04R\ttrustorId\x12\"\n" +
+	"\rtrustor_ta_id\x18\x02 \x01(\tR\vtrustorTaId\x12\x1a\n" +
+	"\bcategory\x18\x03 \x01(\fR\bcategory\x129\n" +
+	"\vlink_update\x18\x04 \x01(\x0e2\x18.trust_anchor.LinkUpdateR\n" +
+	"linkUpdate*$\n" +
+	"\n" +
+	"LinkUpdate\x12\t\n" +
+	"\x05Added\x10\x00\x12\v\n" +
+	"\aRemoved\x10\x012\xc9\t\n" +
+	"\vTrustAnchor\x12E\n" +
+	"\tadd_owner\x12\x16.trust_anchor.AddOwner\x1a\x1e.trust_anchor.AddOwnerResponse\"\x00\x123\n" +
 	"\x05write\x12\x13.trust_anchor.Write\x1a\x13.trust_anchor.Empty\"\x00\x128\n" +
-	"\x04read\x12\x12.trust_anchor.Read\x1a\x1a.trust_anchor.ReadResponse\"\x00\x12E\n" +
-	"\tadd_owner\x12\x16.trust_anchor.AddOwner\x1a\x1e.trust_anchor.AddOwnerResponse\"\x00\x12G\n" +
+	"\x04read\x12\x12.trust_anchor.Read\x1a\x1a.trust_anchor.ReadResponse\"\x00\x12G\n" +
 	"\x10update_trust_vec\x12\x1c.trust_anchor.UpdateTrustVec\x1a\x13.trust_anchor.Empty\"\x00\x12<\n" +
 	"\n" +
 	"set_config\x12\x17.trust_anchor.SetConfig\x1a\x13.trust_anchor.Empty\"\x00\x12?\n" +
 	"\aget_map\x12\x14.trust_anchor.GetMap\x1a\x1c.trust_anchor.GetMapResponse\"\x00\x12N\n" +
 	"\fget_category\x12\x19.trust_anchor.GetCategory\x1a!.trust_anchor.GetCategoryResponse\"\x00\x12@\n" +
 	"\vget_history\x12\x18.trust_anchor.GetHistory\x1a\x15.trust_anchor.History\"\x00\x12O\n" +
-	"\rget_other_ids\x12\x19.trust_anchor.GetOtherIds\x1a!.trust_anchor.GetOtherIdsResponse\"\x00B\x06Z\x04./pbb\x06proto3"
+	"\rget_other_ids\x12\x19.trust_anchor.GetOtherIds\x1a!.trust_anchor.GetOtherIdsResponse\"\x00\x126\n" +
+	"\tget_ta_id\x12\x13.trust_anchor.Empty\x1a\x12.trust_anchor.TaId\"\x00\x12W\n" +
+	"\x16subscribe_link_updates\x12\x13.trust_anchor.Empty\x1a$.trust_anchor.LinkUpdateNotification\"\x000\x01\x12I\n" +
+	"\x11remote_ta_pairing\x12\x14.trust_anchor.TaPair\x1a\x1c.trust_anchor.TaPairResponse\"\x00\x12E\n" +
+	"\vremote_read\x12\x18.trust_anchor.RemoteRead\x1a\x1a.trust_anchor.ReadResponse\"\x00\x12@\n" +
+	"\fremote_write\x12\x19.trust_anchor.RemoteWrite\x1a\x13.trust_anchor.Empty\"\x00\x12K\n" +
+	"\x15remote_add_link_index\x12\x1b.trust_anchor.RemoteAddLink\x1a\x13.trust_anchor.Empty\"\x00\x12Q\n" +
+	"\x18remote_remove_link_index\x12\x1e.trust_anchor.RemoteRemoveLink\x1a\x13.trust_anchor.Empty\"\x00\x12T\n" +
+	"\x17remote_link_index_batch\x12\".trust_anchor.RemoteLinkIndexBatch\x1a\x13.trust_anchor.Empty\"\x00B0Z.github.com/free5gc/webconsole/backend/ta-pb;pbb\x06proto3"
 
 var (
 	file_trust_anchor_proto_rawDescOnce sync.Once
@@ -1924,15 +2322,15 @@ func file_trust_anchor_proto_rawDescGZIP() []byte {
 }
 
 var file_trust_anchor_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_trust_anchor_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
+var file_trust_anchor_proto_msgTypes = make([]protoimpl.MessageInfo, 37)
 var file_trust_anchor_proto_goTypes = []any{
-	(Status)(0),                        // 0: trust_anchor.Status
-	(*TrustAnchorRequest)(nil),         // 1: trust_anchor.TrustAnchorRequest
-	(*TrustAnchorResponse)(nil),        // 2: trust_anchor.TrustAnchorResponse
-	(*Empty)(nil),                      // 3: trust_anchor.Empty
-	(*AddOwnerResponse)(nil),           // 4: trust_anchor.AddOwnerResponse
-	(*Write)(nil),                      // 5: trust_anchor.Write
-	(*Read)(nil),                       // 6: trust_anchor.Read
+	(LinkUpdate)(0),                    // 0: trust_anchor.LinkUpdate
+	(*Empty)(nil),                      // 1: trust_anchor.Empty
+	(*AddOwnerResponse)(nil),           // 2: trust_anchor.AddOwnerResponse
+	(*Write)(nil),                      // 3: trust_anchor.Write
+	(*RemoteWrite)(nil),                // 4: trust_anchor.RemoteWrite
+	(*Read)(nil),                       // 5: trust_anchor.Read
+	(*RemoteRead)(nil),                 // 6: trust_anchor.RemoteRead
 	(*ReadResponse)(nil),               // 7: trust_anchor.ReadResponse
 	(*ProofEntry)(nil),                 // 8: trust_anchor.ProofEntry
 	(*Location)(nil),                   // 9: trust_anchor.Location
@@ -1943,71 +2341,87 @@ var file_trust_anchor_proto_goTypes = []any{
 	(*AuditLogEntry)(nil),              // 14: trust_anchor.AuditLogEntry
 	(*GetMap)(nil),                     // 15: trust_anchor.GetMap
 	(*GetMapResponse)(nil),             // 16: trust_anchor.GetMapResponse
-	(*GetCategory)(nil),                // 17: trust_anchor.GetCategory
-	(*GetCategoryResponse)(nil),        // 18: trust_anchor.GetCategoryResponse
-	(*GetHistory)(nil),                 // 19: trust_anchor.GetHistory
-	(*History)(nil),                    // 20: trust_anchor.History
-	(*GetOtherIds)(nil),                // 21: trust_anchor.GetOtherIds
-	(*GetOtherIdsResponse)(nil),        // 22: trust_anchor.GetOtherIdsResponse
-	(*SetConfig_CatConfig)(nil),        // 23: trust_anchor.SetConfig.CatConfig
-	(*GetMapResponse_Origin)(nil),      // 24: trust_anchor.GetMapResponse.Origin
-	(*GetMapResponse_Link)(nil),        // 25: trust_anchor.GetMapResponse.Link
-	(*GetMapResponse_Peer)(nil),        // 26: trust_anchor.GetMapResponse.Peer
-	(*GetCategoryResponse_KvPair)(nil), // 27: trust_anchor.GetCategoryResponse.KvPair
-	(*History_HistoryEntry)(nil),       // 28: trust_anchor.History.HistoryEntry
+	(*OwnerAddress)(nil),               // 17: trust_anchor.OwnerAddress
+	(*GetCategory)(nil),                // 18: trust_anchor.GetCategory
+	(*GetCategoryResponse)(nil),        // 19: trust_anchor.GetCategoryResponse
+	(*GetHistory)(nil),                 // 20: trust_anchor.GetHistory
+	(*History)(nil),                    // 21: trust_anchor.History
+	(*GetOtherIds)(nil),                // 22: trust_anchor.GetOtherIds
+	(*GetOtherIdsResponse)(nil),        // 23: trust_anchor.GetOtherIdsResponse
+	(*TaPair)(nil),                     // 24: trust_anchor.TaPair
+	(*TaPairResponse)(nil),             // 25: trust_anchor.TaPairResponse
+	(*TaId)(nil),                       // 26: trust_anchor.TaId
+	(*RemoteAddLink)(nil),              // 27: trust_anchor.RemoteAddLink
+	(*RemoteLinkIndexBatch)(nil),       // 28: trust_anchor.RemoteLinkIndexBatch
+	(*RemoteLinkIndexChange)(nil),      // 29: trust_anchor.RemoteLinkIndexChange
+	(*RemoteRemoveLink)(nil),           // 30: trust_anchor.RemoteRemoveLink
+	(*LinkUpdateNotification)(nil),     // 31: trust_anchor.LinkUpdateNotification
+	(*SetConfig_CatConfig)(nil),        // 32: trust_anchor.SetConfig.CatConfig
+	(*GetMapResponse_Origin)(nil),      // 33: trust_anchor.GetMapResponse.Origin
+	(*GetMapResponse_Link)(nil),        // 34: trust_anchor.GetMapResponse.Link
+	(*GetMapResponse_Peer)(nil),        // 35: trust_anchor.GetMapResponse.Peer
+	(*GetCategoryResponse_KvPair)(nil), // 36: trust_anchor.GetCategoryResponse.KvPair
+	(*History_HistoryEntry)(nil),       // 37: trust_anchor.History.HistoryEntry
 }
 var file_trust_anchor_proto_depIdxs = []int32{
-	5,  // 0: trust_anchor.TrustAnchorRequest.write:type_name -> trust_anchor.Write
-	6,  // 1: trust_anchor.TrustAnchorRequest.read:type_name -> trust_anchor.Read
-	10, // 2: trust_anchor.TrustAnchorRequest.update_trust_vec:type_name -> trust_anchor.UpdateTrustVec
-	11, // 3: trust_anchor.TrustAnchorRequest.add_owner:type_name -> trust_anchor.AddOwner
-	12, // 4: trust_anchor.TrustAnchorRequest.set_config:type_name -> trust_anchor.SetConfig
-	15, // 5: trust_anchor.TrustAnchorRequest.get_map:type_name -> trust_anchor.GetMap
-	17, // 6: trust_anchor.TrustAnchorRequest.get_category:type_name -> trust_anchor.GetCategory
-	19, // 7: trust_anchor.TrustAnchorRequest.get_history:type_name -> trust_anchor.GetHistory
-	21, // 8: trust_anchor.TrustAnchorRequest.get_other_ids:type_name -> trust_anchor.GetOtherIds
-	3,  // 9: trust_anchor.TrustAnchorResponse.empty_response:type_name -> trust_anchor.Empty
-	7,  // 10: trust_anchor.TrustAnchorResponse.read_response:type_name -> trust_anchor.ReadResponse
-	4,  // 11: trust_anchor.TrustAnchorResponse.add_owner_response:type_name -> trust_anchor.AddOwnerResponse
-	16, // 12: trust_anchor.TrustAnchorResponse.get_map_response:type_name -> trust_anchor.GetMapResponse
-	18, // 13: trust_anchor.TrustAnchorResponse.get_category_response:type_name -> trust_anchor.GetCategoryResponse
-	20, // 14: trust_anchor.TrustAnchorResponse.get_history_response:type_name -> trust_anchor.History
-	22, // 15: trust_anchor.TrustAnchorResponse.get_other_ids_response:type_name -> trust_anchor.GetOtherIdsResponse
-	0,  // 16: trust_anchor.TrustAnchorResponse.status:type_name -> trust_anchor.Status
-	9,  // 17: trust_anchor.Write.location:type_name -> trust_anchor.Location
-	9,  // 18: trust_anchor.Read.location:type_name -> trust_anchor.Location
-	8,  // 19: trust_anchor.ReadResponse.proof:type_name -> trust_anchor.ProofEntry
-	23, // 20: trust_anchor.SetConfig.configs:type_name -> trust_anchor.SetConfig.CatConfig
-	9,  // 21: trust_anchor.AuditLogEntry.location:type_name -> trust_anchor.Location
-	24, // 22: trust_anchor.GetMapResponse.own_categories:type_name -> trust_anchor.GetMapResponse.Origin
-	25, // 23: trust_anchor.GetMapResponse.links:type_name -> trust_anchor.GetMapResponse.Link
-	26, // 24: trust_anchor.GetMapResponse.peers:type_name -> trust_anchor.GetMapResponse.Peer
-	27, // 25: trust_anchor.GetCategoryResponse.entries:type_name -> trust_anchor.GetCategoryResponse.KvPair
-	9,  // 26: trust_anchor.GetHistory.location:type_name -> trust_anchor.Location
-	28, // 27: trust_anchor.History.history:type_name -> trust_anchor.History.HistoryEntry
-	5,  // 28: trust_anchor.TrustAnchor.write:input_type -> trust_anchor.Write
-	6,  // 29: trust_anchor.TrustAnchor.read:input_type -> trust_anchor.Read
-	11, // 30: trust_anchor.TrustAnchor.add_owner:input_type -> trust_anchor.AddOwner
-	10, // 31: trust_anchor.TrustAnchor.update_trust_vec:input_type -> trust_anchor.UpdateTrustVec
-	12, // 32: trust_anchor.TrustAnchor.set_config:input_type -> trust_anchor.SetConfig
-	15, // 33: trust_anchor.TrustAnchor.get_map:input_type -> trust_anchor.GetMap
-	17, // 34: trust_anchor.TrustAnchor.get_category:input_type -> trust_anchor.GetCategory
-	19, // 35: trust_anchor.TrustAnchor.get_history:input_type -> trust_anchor.GetHistory
-	21, // 36: trust_anchor.TrustAnchor.get_other_ids:input_type -> trust_anchor.GetOtherIds
-	3,  // 37: trust_anchor.TrustAnchor.write:output_type -> trust_anchor.Empty
+	9,  // 0: trust_anchor.Write.location:type_name -> trust_anchor.Location
+	3,  // 1: trust_anchor.RemoteWrite.request:type_name -> trust_anchor.Write
+	9,  // 2: trust_anchor.Read.location:type_name -> trust_anchor.Location
+	5,  // 3: trust_anchor.RemoteRead.request:type_name -> trust_anchor.Read
+	8,  // 4: trust_anchor.ReadResponse.proof:type_name -> trust_anchor.ProofEntry
+	32, // 5: trust_anchor.SetConfig.configs:type_name -> trust_anchor.SetConfig.CatConfig
+	9,  // 6: trust_anchor.AuditLogEntry.location:type_name -> trust_anchor.Location
+	33, // 7: trust_anchor.GetMapResponse.own_categories:type_name -> trust_anchor.GetMapResponse.Origin
+	34, // 8: trust_anchor.GetMapResponse.links:type_name -> trust_anchor.GetMapResponse.Link
+	35, // 9: trust_anchor.GetMapResponse.peers:type_name -> trust_anchor.GetMapResponse.Peer
+	36, // 10: trust_anchor.GetCategoryResponse.entries:type_name -> trust_anchor.GetCategoryResponse.KvPair
+	9,  // 11: trust_anchor.GetHistory.location:type_name -> trust_anchor.Location
+	37, // 12: trust_anchor.History.history:type_name -> trust_anchor.History.HistoryEntry
+	17, // 13: trust_anchor.GetOtherIdsResponse.other_ids:type_name -> trust_anchor.OwnerAddress
+	29, // 14: trust_anchor.RemoteLinkIndexBatch.changes:type_name -> trust_anchor.RemoteLinkIndexChange
+	0,  // 15: trust_anchor.LinkUpdateNotification.link_update:type_name -> trust_anchor.LinkUpdate
+	17, // 16: trust_anchor.GetMapResponse.Origin.trustees:type_name -> trust_anchor.OwnerAddress
+	17, // 17: trust_anchor.GetMapResponse.Link.owner:type_name -> trust_anchor.OwnerAddress
+	17, // 18: trust_anchor.GetMapResponse.Peer.id:type_name -> trust_anchor.OwnerAddress
+	11, // 19: trust_anchor.TrustAnchor.add_owner:input_type -> trust_anchor.AddOwner
+	3,  // 20: trust_anchor.TrustAnchor.write:input_type -> trust_anchor.Write
+	5,  // 21: trust_anchor.TrustAnchor.read:input_type -> trust_anchor.Read
+	10, // 22: trust_anchor.TrustAnchor.update_trust_vec:input_type -> trust_anchor.UpdateTrustVec
+	12, // 23: trust_anchor.TrustAnchor.set_config:input_type -> trust_anchor.SetConfig
+	15, // 24: trust_anchor.TrustAnchor.get_map:input_type -> trust_anchor.GetMap
+	18, // 25: trust_anchor.TrustAnchor.get_category:input_type -> trust_anchor.GetCategory
+	20, // 26: trust_anchor.TrustAnchor.get_history:input_type -> trust_anchor.GetHistory
+	22, // 27: trust_anchor.TrustAnchor.get_other_ids:input_type -> trust_anchor.GetOtherIds
+	1,  // 28: trust_anchor.TrustAnchor.get_ta_id:input_type -> trust_anchor.Empty
+	1,  // 29: trust_anchor.TrustAnchor.subscribe_link_updates:input_type -> trust_anchor.Empty
+	24, // 30: trust_anchor.TrustAnchor.remote_ta_pairing:input_type -> trust_anchor.TaPair
+	6,  // 31: trust_anchor.TrustAnchor.remote_read:input_type -> trust_anchor.RemoteRead
+	4,  // 32: trust_anchor.TrustAnchor.remote_write:input_type -> trust_anchor.RemoteWrite
+	27, // 33: trust_anchor.TrustAnchor.remote_add_link_index:input_type -> trust_anchor.RemoteAddLink
+	30, // 34: trust_anchor.TrustAnchor.remote_remove_link_index:input_type -> trust_anchor.RemoteRemoveLink
+	28, // 35: trust_anchor.TrustAnchor.remote_link_index_batch:input_type -> trust_anchor.RemoteLinkIndexBatch
+	2,  // 36: trust_anchor.TrustAnchor.add_owner:output_type -> trust_anchor.AddOwnerResponse
+	1,  // 37: trust_anchor.TrustAnchor.write:output_type -> trust_anchor.Empty
 	7,  // 38: trust_anchor.TrustAnchor.read:output_type -> trust_anchor.ReadResponse
-	4,  // 39: trust_anchor.TrustAnchor.add_owner:output_type -> trust_anchor.AddOwnerResponse
-	3,  // 40: trust_anchor.TrustAnchor.update_trust_vec:output_type -> trust_anchor.Empty
-	3,  // 41: trust_anchor.TrustAnchor.set_config:output_type -> trust_anchor.Empty
-	16, // 42: trust_anchor.TrustAnchor.get_map:output_type -> trust_anchor.GetMapResponse
-	18, // 43: trust_anchor.TrustAnchor.get_category:output_type -> trust_anchor.GetCategoryResponse
-	20, // 44: trust_anchor.TrustAnchor.get_history:output_type -> trust_anchor.History
-	22, // 45: trust_anchor.TrustAnchor.get_other_ids:output_type -> trust_anchor.GetOtherIdsResponse
-	37, // [37:46] is the sub-list for method output_type
-	28, // [28:37] is the sub-list for method input_type
-	28, // [28:28] is the sub-list for extension type_name
-	28, // [28:28] is the sub-list for extension extendee
-	0,  // [0:28] is the sub-list for field type_name
+	1,  // 39: trust_anchor.TrustAnchor.update_trust_vec:output_type -> trust_anchor.Empty
+	1,  // 40: trust_anchor.TrustAnchor.set_config:output_type -> trust_anchor.Empty
+	16, // 41: trust_anchor.TrustAnchor.get_map:output_type -> trust_anchor.GetMapResponse
+	19, // 42: trust_anchor.TrustAnchor.get_category:output_type -> trust_anchor.GetCategoryResponse
+	21, // 43: trust_anchor.TrustAnchor.get_history:output_type -> trust_anchor.History
+	23, // 44: trust_anchor.TrustAnchor.get_other_ids:output_type -> trust_anchor.GetOtherIdsResponse
+	26, // 45: trust_anchor.TrustAnchor.get_ta_id:output_type -> trust_anchor.TaId
+	31, // 46: trust_anchor.TrustAnchor.subscribe_link_updates:output_type -> trust_anchor.LinkUpdateNotification
+	25, // 47: trust_anchor.TrustAnchor.remote_ta_pairing:output_type -> trust_anchor.TaPairResponse
+	7,  // 48: trust_anchor.TrustAnchor.remote_read:output_type -> trust_anchor.ReadResponse
+	1,  // 49: trust_anchor.TrustAnchor.remote_write:output_type -> trust_anchor.Empty
+	1,  // 50: trust_anchor.TrustAnchor.remote_add_link_index:output_type -> trust_anchor.Empty
+	1,  // 51: trust_anchor.TrustAnchor.remote_remove_link_index:output_type -> trust_anchor.Empty
+	1,  // 52: trust_anchor.TrustAnchor.remote_link_index_batch:output_type -> trust_anchor.Empty
+	36, // [36:53] is the sub-list for method output_type
+	19, // [19:36] is the sub-list for method input_type
+	19, // [19:19] is the sub-list for extension type_name
+	19, // [19:19] is the sub-list for extension extendee
+	0,  // [0:19] is the sub-list for field type_name
 }
 
 func init() { file_trust_anchor_proto_init() }
@@ -2015,33 +2429,13 @@ func file_trust_anchor_proto_init() {
 	if File_trust_anchor_proto != nil {
 		return
 	}
-	file_trust_anchor_proto_msgTypes[0].OneofWrappers = []any{
-		(*TrustAnchorRequest_Write)(nil),
-		(*TrustAnchorRequest_Read)(nil),
-		(*TrustAnchorRequest_UpdateTrustVec)(nil),
-		(*TrustAnchorRequest_AddOwner)(nil),
-		(*TrustAnchorRequest_SetConfig)(nil),
-		(*TrustAnchorRequest_GetMap)(nil),
-		(*TrustAnchorRequest_GetCategory)(nil),
-		(*TrustAnchorRequest_GetHistory)(nil),
-		(*TrustAnchorRequest_GetOtherIds)(nil),
-	}
-	file_trust_anchor_proto_msgTypes[1].OneofWrappers = []any{
-		(*TrustAnchorResponse_EmptyResponse)(nil),
-		(*TrustAnchorResponse_ReadResponse)(nil),
-		(*TrustAnchorResponse_AddOwnerResponse)(nil),
-		(*TrustAnchorResponse_GetMapResponse)(nil),
-		(*TrustAnchorResponse_GetCategoryResponse)(nil),
-		(*TrustAnchorResponse_GetHistoryResponse)(nil),
-		(*TrustAnchorResponse_GetOtherIdsResponse)(nil),
-	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_trust_anchor_proto_rawDesc), len(file_trust_anchor_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   28,
+			NumMessages:   37,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
