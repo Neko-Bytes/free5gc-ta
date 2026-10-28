@@ -38,18 +38,22 @@ const (
 	CategorySubscriptionData byte = 0x03
 	CategoryPolicyData       byte = 0x04
 	CategoryPhonebook        byte = 0x10
+
+	// systemOwnerID is the TA-reserved owner space shared with UDR (admin-owner-id: 1).
+	systemOwnerID uint64 = 1
 )
 
 var max_retries = 30
 var retry_delay = 2 * time.Second
 
+// makeOwnerCtx builds the request context for system Owner 1.
 func makeOwnerCtx() context.Context {
 	ownerBytes := make([]byte, 8)
-	// binary.BigEndian.PutUint64(ownerBytes, ownerID)
-	binary.BigEndian.PutUint64(ownerBytes, 1)
+	binary.BigEndian.PutUint64(ownerBytes, systemOwnerID)
 	return metadata.AppendToOutgoingContext(context.Background(), "id-bin", string(ownerBytes))
 }
 
+// TaInit connects to the Trust Anchor as system Owner 1.
 func TaInit(address string) error {
 	ta.mu.Lock()
 	defer ta.mu.Unlock()
@@ -70,64 +74,32 @@ func TaInit(address string) error {
 
 		client := pb.NewTrustAnchorClient(c)
 
-		// Check if owners already exist in TA
-		req := &pb.GetOtherIds{}
-		ctx0 := makeOwnerCtx()
-		res, err := client.GetOtherIds(ctx0, req)
-		if err == nil && len(res.OtherIds) > 0 {
-			// Owner 1 already exists: reuse it and fetch the local TA ID.
-			taID := ta.taID
-			if taID == "" {
-				taIDRes, err := client.GetTaId(context.Background(), &pb.Empty{})
-				if err != nil {
-					_ = c.Close()
-					lastErr = fmt.Errorf("failed to fetch TA ID: %w", err)
-					time.Sleep(retry_delay)
-					continue
-				}
-				taID = taIDRes.GetTaId()
-				if taID == "" {
-					_ = c.Close()
-					lastErr = fmt.Errorf("failed to fetch TA ID: empty TA ID returned")
-					time.Sleep(retry_delay)
-					continue
-				}
-			}
-			ta.conn = c
-			ta.client = client
-			ta.ownerID = 1
-			ta.taID = taID
-			logger.InitLog.Infof("[TA Client] Connected to TA successfully. Using existing system Owner ID: 1 (Attempts: %d)", i)
-			return nil
-		}
-
-		// Otherwise register as initial owner (Owner 1)
-		addRes, err := client.AddOwner(context.Background(), &pb.AddOwner{})
-		if err != nil {
+		// Get trust-anchor ID for this owner
+		taIDRes, err := client.GetTaId(context.Background(), &pb.Empty{})
+		if err != nil || taIDRes.GetTaId() == "" {
 			_ = c.Close()
-			lastErr = fmt.Errorf("failed to register owner: %w", err)
+			if err == nil {
+				err = fmt.Errorf("empty TA ID returned")
+			}
+			lastErr = fmt.Errorf("failed to fetch TA ID: %w", err)
 			time.Sleep(retry_delay)
 			continue
 		}
 
-		taID := addRes.GetTaId()
-		if taID == "" {
-			taIDRes, err := client.GetTaId(context.Background(), &pb.Empty{})
-			if err != nil {
-				_ = c.Close()
-				lastErr = fmt.Errorf("failed to fetch TA ID: %w", err)
-				time.Sleep(retry_delay)
-				continue
-			}
-			taID = taIDRes.GetTaId()
+		// Fail fast if system Owner 1 does not exist.
+		if _, err := client.GetMap(makeOwnerCtx(), &pb.GetMap{}); err != nil {
+			_ = c.Close()
+			lastErr = fmt.Errorf("system Owner 1 unavailable, check admin-owner-id in TA config: %w", err)
+			time.Sleep(retry_delay)
+			continue
 		}
 
 		ta.conn = c
 		ta.client = client
-		ta.ownerID = addRes.OwnerId
-		ta.taID = taID
+		ta.ownerID = systemOwnerID
+		ta.taID = taIDRes.GetTaId()
 
-		logger.InitLog.Infof("[TA Client] [Owner ID: %d] Connected to TA and registered initial owner successfully. Attempts: %d", ta.ownerID, i)
+		logger.InitLog.Infof("[TA Client] Using system Owner ID: %d (Attempts: %d)", systemOwnerID, i)
 		return nil
 	}
 
