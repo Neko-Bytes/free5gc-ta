@@ -29,7 +29,7 @@ func decodePhonebookValue(data []byte) (uint64, error) {
 
 // Finds the Ownerspace ID for the respective subscriber ueId
 func phonebookScanner(ueId string) (uint64, error) {
-	data, err := TaRead(1, CategoryPhonebook, phonebookKey(ueId))
+	data, err := TaRead(systemOwnerID, CategoryPhonebook, phonebookKey(ueId))
 	if err != nil {
 		return 0, fmt.Errorf("[TA Phone]: Trust anchor service is unreachable: %w", err)
 	}
@@ -41,7 +41,7 @@ func phonebookScanner(ueId string) (uint64, error) {
 
 // Writes into the phonebook
 func phonebookInsert(ueId string, ownerID uint64) error {
-	err := TaWrite(1, CategoryPhonebook, phonebookKey(ueId), ownerID)
+	err := TaWrite(systemOwnerID, CategoryPhonebook, phonebookKey(ueId), ownerID)
 
 	if err != nil {
 		return fmt.Errorf("[TA Phone]: New entry for %s inside phonebook failed: %w", ueId, err)
@@ -51,7 +51,7 @@ func phonebookInsert(ueId string, ownerID uint64) error {
 
 // Removes entry from the Phonebook
 func PhonebookDelete(ueId string) error {
-	err := TaDelete(1, CategoryPhonebook, phonebookKey(ueId))
+	err := TaDelete(systemOwnerID, CategoryPhonebook, phonebookKey(ueId))
 
 	if err != nil {
 		return fmt.Errorf("[TA Phone]: Removal of %s inside Phonebook failed: %w", ueId, err)
